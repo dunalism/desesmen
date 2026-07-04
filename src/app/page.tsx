@@ -62,13 +62,13 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard"
+              href="/cbt"
               className="text-sm font-semibold hover:text-primary transition-colors"
             >
-              Masuk
+              CBT
             </Link>
             <Button asChild>
-              <Link href="/login">Coba Gratis</Link>
+              <Link href="/login">Masuk</Link>
             </Button>
           </div>
         </div>
@@ -426,8 +426,8 @@ export default function LandingPage() {
             </h2>
             <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
               Bergabunglah dengan ribuan pendidik cerdas lainnya yang telah
-              beralih ke era asesmen digital otomatis yang tangguh, hemat biaya
-              (0 Rupiah), dan bebas stres.
+              beralih ke era asesmen digital otomatis yang tangguh, hemat biaya,
+              dan bebas stres.
             </p>
             <div className="flex flex-col items-center gap-4">
               <Button

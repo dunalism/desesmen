@@ -197,8 +197,8 @@ export default function ExamsDashboardPage() {
             Sesi Ujian CBT
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Kelola ujian mandiri tangguh dengan infrastruktur server hemat biaya
-            (0 Rupiah).
+            Kelola ujian mandiri tangguh dengan infrastruktur server hemat
+            biaya.
           </p>
         </div>
         <Button
