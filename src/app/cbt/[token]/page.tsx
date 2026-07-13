@@ -96,6 +96,14 @@ export default function CbtExamPage({
   const [isNavigating, setIsNavigating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // CBT PROTECTION STATES
+  const [isExamStarted, setIsExamStarted] = useState(false);
+  const [violationCount, setViolationCount] = useState(0);
+  const [violationLog, setViolationLog] = useState<
+    { timestamp: string; type: string; reason: string }[]
+  >([]);
+  const [isOutFullscreen, setIsOutFullscreen] = useState(false);
+
   // Initialize and load data from localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -151,10 +159,51 @@ export default function CbtExamPage({
 
         setQuestions(finalQuestions);
 
-        // Load saved answers from localStorage if any
-        const savedAnswers = localStorage.getItem(`cbt-answers-${token}`);
-        if (savedAnswers) {
-          setAnswers(JSON.parse(savedAnswers));
+        // Load saved answers, violationCount, violationLog from sessionStorage
+        const savedSessionData = sessionStorage.getItem(`cbt-session-${token}`);
+        let loadedAnswers: Record<string, AnswerState> = {};
+
+        if (savedSessionData) {
+          try {
+            const parsed = JSON.parse(savedSessionData);
+            if (parsed.answers) {
+              loadedAnswers = parsed.answers;
+              setAnswers(loadedAnswers);
+            }
+            if (typeof parsed.violationCount === "number") {
+              setViolationCount(parsed.violationCount);
+            }
+            if (Array.isArray(parsed.violationLog)) {
+              setViolationLog(parsed.violationLog);
+            }
+            if (parsed.isExamStarted) {
+              setIsExamStarted(true);
+              // Jika sudah mulai lalu refresh, paksa masuk fullscreen kembali
+              setIsOutFullscreen(true);
+            }
+          } catch (e) {
+            console.error("Error parsing cbt-session:", e);
+          }
+        }
+
+        // Fallback ke localStorage jika data sessionStorage kosong (agar tidak kehilangan progres lama)
+        if (Object.keys(loadedAnswers).length === 0) {
+          const savedAnswers = localStorage.getItem(`cbt-answers-${token}`);
+          if (savedAnswers) {
+            const parsedLocalAnswers = JSON.parse(savedAnswers);
+            setAnswers(parsedLocalAnswers);
+
+            // Sinkronisasi ke sessionStorage
+            sessionStorage.setItem(
+              `cbt-session-${token}`,
+              JSON.stringify({
+                answers: parsedLocalAnswers,
+                violationCount: 0,
+                violationLog: [],
+                isExamStarted: false,
+              }),
+            );
+          }
         }
 
         setLoading(false);
@@ -167,18 +216,33 @@ export default function CbtExamPage({
     return () => clearTimeout(timer);
   }, [token, router]);
 
-  // Save answers state to localStorage on every change
+  // Save answers state to sessionStorage on every change
   const saveAnswer = (questionId: string, newState: Partial<AnswerState>) => {
     setAnswers((prev) => {
-      const updated = {
+      const updatedAnswers = {
         ...prev,
         [questionId]: {
           ...prev[questionId],
           ...newState,
         },
       };
-      localStorage.setItem(`cbt-answers-${token}`, JSON.stringify(updated));
-      return updated;
+
+      const currentSessionData = sessionStorage.getItem(`cbt-session-${token}`);
+      let parsed = {};
+      if (currentSessionData) {
+        try {
+          parsed = JSON.parse(currentSessionData);
+        } catch {}
+      }
+
+      sessionStorage.setItem(
+        `cbt-session-${token}`,
+        JSON.stringify({
+          ...parsed,
+          answers: updatedAnswers,
+        }),
+      );
+      return updatedAnswers;
     });
   };
 
@@ -186,6 +250,139 @@ export default function CbtExamPage({
     const currentDoubtful = !!answers[questionId]?.isDoubtful;
     saveAnswer(questionId, { isDoubtful: !currentDoubtful });
   };
+
+  // HELPER UNTUK MEMERIKSA FULLSCREEN
+  const checkFullscreen = (): boolean => {
+    const doc = document as unknown as Record<string, unknown>;
+    return !!(
+      document.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement
+    );
+  };
+
+  // MEMULAI UJIAN SECARA AMAN (MASUK FULLSCREEN)
+  const handleStartExamSecure = async () => {
+    try {
+      const element = document.documentElement;
+      const el = element as unknown as Record<string, unknown>;
+      if (element.requestFullscreen) {
+        await element.requestFullscreen();
+      } else if (typeof el.webkitRequestFullscreen === "function") {
+        await (el.webkitRequestFullscreen as () => Promise<void>)();
+      } else if (typeof el.msRequestFullscreen === "function") {
+        await (el.msRequestFullscreen as () => Promise<void>)();
+      } else {
+        throw new Error("Fullscreen API tidak didukung oleh browser Anda.");
+      }
+
+      setIsExamStarted(true);
+      setIsOutFullscreen(false);
+
+      const currentSessionData = sessionStorage.getItem(`cbt-session-${token}`);
+      let parsed = {};
+      if (currentSessionData) {
+        try {
+          parsed = JSON.parse(currentSessionData);
+        } catch {}
+      }
+      sessionStorage.setItem(
+        `cbt-session-${token}`,
+        JSON.stringify({
+          ...parsed,
+          isExamStarted: true,
+          answers,
+        }),
+      );
+    } catch (err) {
+      console.error("Fullscreen request failed:", err);
+      showAlert(
+        "Browser Menolak Fullscreen",
+        "Gagal masuk ke mode Layar Penuh (Fullscreen). Silakan pastikan Anda memberikan izin fullscreen untuk situs ini atau gunakan browser lain seperti Google Chrome / Microsoft Edge.",
+      );
+    }
+  };
+
+  // MASUK KEMBALI KE MODE FULLSCREEN
+  const handleResumeFullscreen = async () => {
+    try {
+      const element = document.documentElement;
+      const el = element as unknown as Record<string, unknown>;
+      if (element.requestFullscreen) {
+        await element.requestFullscreen();
+      } else if (typeof el.webkitRequestFullscreen === "function") {
+        await (el.webkitRequestFullscreen as () => Promise<void>)();
+      } else if (typeof el.msRequestFullscreen === "function") {
+        await (el.msRequestFullscreen as () => Promise<void>)();
+      }
+      setIsOutFullscreen(false);
+    } catch (err) {
+      console.error("Failed to resume fullscreen:", err);
+      showAlert(
+        "Gagal Layar Penuh",
+        "Sistem gagal masuk kembali ke mode Layar Penuh. Silakan klik tombol kembali atau hubungi pengawas.",
+      );
+    }
+  };
+
+  // DAFTARKAN PELANGGARAN
+  const registerViolation = useCallback(
+    (type: string, reason: string) => {
+      if (!isExamStarted || isSuccess || submitting || violationCount >= 4)
+        return;
+
+      const nextCount = violationCount + 1;
+      setViolationCount(nextCount);
+
+      const newLogEntry = {
+        timestamp: new Date().toISOString(),
+        type,
+        reason,
+      };
+
+      const nextLog = [...violationLog, newLogEntry];
+      setViolationLog(nextLog);
+
+      const currentSessionData = sessionStorage.getItem(`cbt-session-${token}`);
+      let parsed = {};
+      if (currentSessionData) {
+        try {
+          parsed = JSON.parse(currentSessionData);
+        } catch {}
+      }
+
+      sessionStorage.setItem(
+        `cbt-session-${token}`,
+        JSON.stringify({
+          ...parsed,
+          violationCount: nextCount,
+          violationLog: nextLog,
+        }),
+      );
+
+      if (nextCount >= 4) {
+        showAlert(
+          "Ujian Dihentikan",
+          "Anda telah dideteksi meninggalkan halaman ujian atau keluar dari mode layar penuh sebanyak 4 kali. Sesi ujian Anda dihentikan dan jawaban Anda dikirim otomatis.",
+        );
+      } else {
+        showAlert(
+          "⚠️ PERINGATAN",
+          `Anda telah dideteksi meninggalkan halaman ujian atau keluar dari mode layar penuh.\n\nPelanggaran: ${nextCount} dari 3.\n\nJika pelanggaran terjadi kembali (maksimal 4 kali), ujian akan dikirim secara otomatis.`,
+        );
+      }
+    },
+    [
+      isExamStarted,
+      isSuccess,
+      submitting,
+      violationCount,
+      violationLog,
+      token,
+      showAlert,
+    ],
+  );
 
   // Submitting the Exam
   const performSubmission = async () => {
@@ -342,6 +539,121 @@ export default function CbtExamPage({
     };
   }, [loading, handleExitAttempt, isNavigating, isSuccess]);
 
+  // Trigger Auto Submit ketika Pelanggaran mencapai Batas Maksimum (4)
+  useEffect(() => {
+    if (violationCount >= 4 && !isSuccess && !submitting && isExamStarted) {
+      const triggerAutoSubmit = async () => {
+        setSubmitting(true);
+        await performSubmission();
+      };
+      triggerAutoSubmit();
+    }
+  }, [violationCount, isSuccess, submitting, isExamStarted]);
+
+  // Monitoring Fullscreen
+  useEffect(() => {
+    if (!isExamStarted || isSuccess || submitting || violationCount >= 4)
+      return;
+
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = checkFullscreen();
+      if (!isCurrentlyFullscreen) {
+        setIsOutFullscreen(true);
+        registerViolation(
+          "FULLSCREEN_EXIT",
+          "Peserta keluar dari mode fullscreen (layar penuh).",
+        );
+      } else {
+        setIsOutFullscreen(false);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "MSFullscreenChange",
+        handleFullscreenChange,
+      );
+    };
+  }, [isExamStarted, isSuccess, submitting, violationCount, registerViolation]);
+
+  // Monitoring Visibility (Page Switch / Minimize)
+  useEffect(() => {
+    if (!isExamStarted || isSuccess || submitting || violationCount >= 4)
+      return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        registerViolation(
+          "PAGE_HIDDEN",
+          "Peserta meninggalkan halaman ujian (berpindah tab atau minimize browser).",
+        );
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isExamStarted, isSuccess, submitting, violationCount, registerViolation]);
+
+  // Keyboard Protection & Context Menu Protection
+  useEffect(() => {
+    if (!isExamStarted || isSuccess || submitting) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F12
+      if (e.key === "F12") {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (
+        e.ctrlKey &&
+        e.shiftKey &&
+        (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      if (e.ctrlKey && (e.key === "U" || e.key === "u")) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("contextmenu", handleContextMenu, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("contextmenu", handleContextMenu, true);
+    };
+  }, [isExamStarted, isSuccess, submitting]);
+
   if (loading || !student || !exam) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background">
@@ -349,6 +661,104 @@ export default function CbtExamPage({
         <p className="text-sm text-muted-foreground mt-2 font-medium">
           Memuat Ujian...
         </p>
+      </div>
+    );
+  }
+
+  // GERBANG MULAI UJIAN (MUST FULLSCREEN)
+  if (!isExamStarted) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 px-4 py-12 dark:bg-background select-none">
+        <div className="w-full max-w-lg space-y-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="inline-flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-mono font-bold text-2xl shadow-md">
+              CBT
+            </div>
+            <h1 className="mt-4 font-heading text-2xl font-bold tracking-tight">
+              Sistem Proteksi CBT Aktif
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">{exam.title}</p>
+          </div>
+
+          <Card className="border shadow-lg">
+            <CardHeader className="bg-destructive/5 border-b py-4">
+              <div className="flex items-center gap-2.5 text-destructive font-bold">
+                <AlertTriangle className="h-5 w-5 shrink-0 animate-bounce" />
+                <span>ATURAN PENTING & INTEGRITAS UJIAN</span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-3.5 text-sm leading-relaxed text-muted-foreground">
+                <p>
+                  Sesi ujian ini dilindungi oleh sistem keamanan anti-curang
+                  ketat. Harap baca dan patuhi aturan berikut sebelum memulai:
+                </p>
+                <ul className="list-disc pl-5 space-y-2 text-foreground font-medium text-xs sm:text-sm">
+                  <li>
+                    Ujian wajib dikerjakan dalam{" "}
+                    <span className="text-primary font-bold">
+                      Mode Layar Penuh (Fullscreen)
+                    </span>
+                    .
+                  </li>
+                  <li>
+                    Sistem mendeteksi jika Anda{" "}
+                    <span className="text-destructive font-bold">
+                      keluar dari fullscreen, menekan Alt+Tab, berpindah tab,
+                      atau meminimalkan browser
+                    </span>
+                    .
+                  </li>
+                  <li>
+                    Setiap tindakan keluar atau berpindah layar dicatat sebagai{" "}
+                    <span className="text-destructive font-bold">
+                      Pelanggaran
+                    </span>
+                    .
+                  </li>
+                  <li>
+                    Batas toleransi maksimal adalah{" "}
+                    <span className="text-destructive font-bold">
+                      3 kali pelanggaran
+                    </span>
+                    . Pada pelanggaran ke-4, lembar jawaban Anda akan{" "}
+                    <span className="text-destructive font-bold">
+                      dikirim otomatis ke server
+                    </span>{" "}
+                    dan sesi ujian Anda ditutup.
+                  </li>
+                  <li>
+                    Tombol klik kanan serta pintasan keyboard pengembang
+                    (seperti F12) dinonaktifkan sepenuhnya.
+                  </li>
+                </ul>
+                <p className="text-[11px] sm:text-xs italic bg-muted p-2.5 rounded-lg border">
+                  Catatan: Pastikan tidak ada aplikasi pop-up, notifikasi, atau
+                  antivirus yang aktif selama ujian untuk menghindari kehilangan
+                  fokus browser tidak sengaja.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    window.location.href = "/cbt";
+                  }}
+                  className="sm:w-1/3 font-semibold h-11"
+                >
+                  Batal
+                </Button>
+                <Button
+                  onClick={handleStartExamSecure}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-base h-11 shadow-md hover:shadow-lg transition-all"
+                >
+                  Setuju & Mulai Ujian
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -371,6 +781,39 @@ export default function CbtExamPage({
         />
       }
     >
+      {/* COVER LAYOUT JIKA DI LUAR FULLSCREEN */}
+      {isOutFullscreen && (
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-200">
+          <div className="w-full max-w-md text-center space-y-6 bg-card p-8 rounded-2xl border shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="size-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <AlertTriangle className="h-8 w-8 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold tracking-tight text-foreground">
+                Layar Penuh Dinonaktifkan
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Anda terdeteksi keluar dari mode layar penuh (fullscreen). Demi
+                keamanan, pengerjaan ujian ditangguhkan hingga Anda kembali ke
+                mode layar penuh.
+              </p>
+            </div>
+
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive p-3.5 rounded-xl font-semibold text-sm">
+              Pelanggaran saat ini: {violationCount} dari 3 batas toleransi.
+            </div>
+
+            <Button
+              onClick={handleResumeFullscreen}
+              size="lg"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-lg"
+            >
+              Masuk Kembali ke Fullscreen
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* JITTERING / LOADING OVERLAY */}
       {jitterTime !== null && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
