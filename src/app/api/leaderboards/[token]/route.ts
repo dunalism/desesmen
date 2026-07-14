@@ -38,12 +38,12 @@ export async function GET(
       );
     }
 
-    if (exam.isActive) {
-      return NextResponse.json(
-        { error: "Papan peringkat belum tersedia karena ujian masih aktif." },
-        { status: 403 },
-      );
-    }
+    // if (exam.isActive) {
+    //   return NextResponse.json(
+    //     { error: "Papan peringkat belum tersedia karena ujian masih aktif." },
+    //     { status: 403 },
+    //   );
+    // }
 
     if (!exam.showLeaderboard) {
       return NextResponse.json(

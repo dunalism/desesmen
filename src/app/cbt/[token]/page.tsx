@@ -754,10 +754,6 @@ export default function CbtExamPage({
                     </span>{" "}
                     dan sesi ujian Anda ditutup.
                   </li>
-                  <li>
-                    Tombol klik kanan serta pintasan keyboard pengembang
-                    (seperti F12) dinonaktifkan sepenuhnya.
-                  </li>
                 </ul>
                 <p className="text-[11px] sm:text-xs italic bg-muted p-2.5 rounded-lg border">
                   Catatan: Pastikan tidak ada aplikasi pop-up, notifikasi, atau
@@ -800,7 +796,7 @@ export default function CbtExamPage({
       studentId={student.studentId}
       timerComponent={
         <CbtTimer
-          durationMinutes={exam.duration}
+          durationMinutes={exam.duration + 0.3}
           token={token}
           startedAt={student.startedAt}
           onTimeUp={performSubmission}
