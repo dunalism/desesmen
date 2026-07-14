@@ -9,7 +9,6 @@ interface CbtLayoutProps {
   title: string;
   studentName: string;
   studentId: string;
-  onExit: () => void;
   timerComponent?: React.ReactNode;
 }
 
@@ -18,7 +17,6 @@ export default function CbtLayout({
   title,
   studentName,
   studentId,
-  onExit,
   timerComponent,
 }: CbtLayoutProps) {
   const [isOnline, setIsOnline] = useState(() =>
@@ -80,19 +78,7 @@ export default function CbtLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {timerComponent}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:bg-destructive/10"
-              onClick={onExit}
-            >
-              <LogOut className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Keluar</span>
-            </Button>
-          </div>
+          <div className="flex items-center gap-3">{timerComponent}</div>
         </div>
       </header>
 

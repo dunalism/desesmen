@@ -778,7 +778,7 @@ export default function CbtExamPage({
                 </Button>
                 <Button
                   onClick={handleStartExamSecure}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-base h-11 shadow-md hover:shadow-lg transition-all"
+                  className="sm:w-2/3 font-semibold h-11"
                 >
                   Setuju & Mulai Ujian
                 </Button>
@@ -798,7 +798,6 @@ export default function CbtExamPage({
       title={exam.title}
       studentName={student.name}
       studentId={student.studentId}
-      onExit={handleExitAttempt}
       timerComponent={
         <CbtTimer
           durationMinutes={exam.duration}
