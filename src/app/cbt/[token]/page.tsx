@@ -443,11 +443,29 @@ export default function CbtExamPage({
         throw new Error(resData.error || "Gagal menyimpan lembar jawaban.");
       }
 
-      // Success! Clear local storage for this exam session
+      // Exit fullscreen if active
+      if (
+        document.fullscreenElement ||
+        (document as unknown as Record<string, unknown>).webkitFullscreenElement
+      ) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (
+          (document as unknown as Record<string, unknown>).webkitExitFullscreen
+        ) {
+          (
+            (document as unknown as Record<string, unknown>)
+              .webkitExitFullscreen as () => void
+          )();
+        }
+      }
+
+      // Success! Clear local storage and session storage for this exam session
       localStorage.removeItem(`cbt-student-session-${token}`);
       localStorage.removeItem(`cbt-exam-data-${token}`);
       localStorage.removeItem(`cbt-timer-${token}`);
       localStorage.removeItem(`cbt-answers-${token}`);
+      sessionStorage.removeItem(`cbt-session-${token}`);
 
       showAlert(
         "Ujian Selesai",
@@ -464,6 +482,15 @@ export default function CbtExamPage({
           "Sudah Tersimpan",
           "Jawaban Anda untuk ujian/tugas ini sudah tersimpan di server sebelumnya. Anda tidak perlu mengirimkannya lagi.",
         );
+        // Clear storages as well on already-submitted error to avoid lock-up
+        localStorage.removeItem(`cbt-student-session-${token}`);
+        localStorage.removeItem(`cbt-exam-data-${token}`);
+        localStorage.removeItem(`cbt-timer-${token}`);
+        localStorage.removeItem(`cbt-answers-${token}`);
+        sessionStorage.removeItem(`cbt-session-${token}`);
+
+        setIsSuccess(true);
+        router.push("/cbt/success");
       } else {
         setSubmitError(
           errMsg ||
