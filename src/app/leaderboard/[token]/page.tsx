@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -30,6 +31,9 @@ import {
   BookOpen,
 } from "lucide-react";
 import { formatDuration } from "@/lib/utils";
+
+// @ts-expect-error canvas-confetti does not provide types in this offline build
+import confetti from "canvas-confetti";
 
 interface Attempt {
   id: string;
@@ -62,6 +66,51 @@ export default function LeaderboardDetailPage() {
     token ? `/api/leaderboards/${token}` : null,
     fetcher,
   );
+
+  const [cooldown, setCooldown] = useState(false);
+
+  const handleConfetti = () => {
+    if (cooldown) return;
+    setCooldown(true);
+
+    // Jalankan confetti dari dua arah (kiri dan kanan) selama 2.5 detik
+    const duration = 2.5 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 50 };
+
+    const randomInRange = (min: number, max: number) => {
+      return Math.random() * (max - min) + min;
+    };
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        return;
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+
+      // Confetti dari sisi kiri
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+      });
+      // Confetti dari sisi kanan
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+      });
+    }, 250);
+
+    // Cooldown selama 4 detik sebelum bisa diklik lagi
+    setTimeout(() => {
+      setCooldown(false);
+    }, 4000);
+  };
 
   if (isLoading) {
     return (
@@ -104,15 +153,78 @@ export default function LeaderboardDetailPage() {
   const top3 = attempts.slice(0, 3);
   const remaining = attempts.slice(3);
 
-  // Re-order top3 untuk posisi visual podium: Juara 2 (Indeks 1), Juara 1 (Indeks 0), Juara 3 (Indeks 2)
-  const podiumOrder = [];
-  if (top3[1]) podiumOrder.push({ ...top3[1], rank: 2 });
-  if (top3[0]) podiumOrder.push({ ...top3[0], rank: 1 });
-  if (top3[2]) podiumOrder.push({ ...top3[2], rank: 3 });
-
   return (
-    <div className="min-h-screen bg-muted/40 dark:bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-muted/40 dark:bg-background py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* CSS Keyframes Animations */}
+      <style>{`
+        @keyframes riseUp {
+          from {
+            opacity: 0;
+            transform: translateY(40px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes floatCard {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-6px);
+          }
+        }
+        @keyframes floatCrown {
+          0%, 100% {
+            transform: translateY(0) rotate(-2deg) scale(1);
+          }
+          50% {
+            transform: translateY(-4px) rotate(2deg) scale(1.05);
+          }
+        }
+        @keyframes glowAmber {
+          0%, 100% {
+            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15), 0 8px 10px -6px rgba(245, 158, 11, 0.15);
+          }
+          50% {
+            box-shadow: 0 20px 35px -5px rgba(245, 158, 11, 0.35), 0 12px 18px -6px rgba(245, 158, 11, 0.35);
+          }
+        }
+        .animate-rise-3 {
+          animation: riseUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+        }
+        .animate-rise-2 {
+          animation: riseUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation-delay: 150ms;
+          opacity: 0;
+        }
+        .animate-rise-1 {
+          animation: riseUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation-delay: 300ms;
+          opacity: 0;
+        }
+        .animate-float-card {
+          animation: floatCard 2.5s ease-in-out infinite;
+        }
+        .animate-float-crown {
+          animation: floatCrown 2s ease-in-out infinite;
+        }
+        .animate-glow-amber {
+          animation: glowAmber 3s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* Background Trophy Decoration */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[500px] aspect-square pointer-events-none z-0 flex items-center justify-center">
+        <Trophy
+          className="w-full h-full text-amber-500/5 dark:text-amber-500/[0.03]"
+          style={{ pointerEvents: "none" }}
+        />
+      </div>
+
+      <div className="max-w-5xl mx-auto space-y-8 relative z-10">
         {/* Header Navigation */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
           <div className="space-y-1">
@@ -167,13 +279,14 @@ export default function LeaderboardDetailPage() {
 
               <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-2xl mx-auto pt-8 items-end">
                 {/* Visual Podium Render */}
+
                 {/* 1. Perak (Juara 2) */}
                 {top3[1] ? (
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center animate-rise-2 transition-all duration-300 hover:scale-105 active:scale-95">
                     {/* Siswa Card Info */}
                     <div className="text-center mb-3 space-y-1 w-full px-1">
                       <div className="relative inline-flex">
-                        <div className="size-12 rounded-full bg-slate-400/20 border-2 border-slate-400 flex items-center justify-center">
+                        <div className="size-12 rounded-full bg-slate-400/20 border-2 border-slate-400 flex items-center justify-center shadow-md shadow-slate-400/10">
                           <Medal className="size-6 text-slate-500" />
                         </div>
                         <span className="absolute -bottom-1 -right-1 size-5 bg-slate-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border border-background">
@@ -181,7 +294,7 @@ export default function LeaderboardDetailPage() {
                         </span>
                       </div>
                       <p
-                        className="font-bold text-xs sm:text-sm truncate"
+                        className="font-bold text-xs sm:text-sm truncate text-foreground/90"
                         title={top3[1].studentName}
                       >
                         {top3[1].studentName}
@@ -191,7 +304,7 @@ export default function LeaderboardDetailPage() {
                       </p>
                     </div>
                     {/* Blok Podium */}
-                    <div className="w-full bg-gradient-to-t from-slate-400/20 to-slate-400/10 border-t-2 border-x border-slate-400 rounded-t-lg h-24 sm:h-32 flex flex-col items-center justify-center p-2 text-center">
+                    <div className="w-full bg-gradient-to-t from-slate-400/20 to-slate-400/10 border-t-2 border-x border-slate-400 rounded-t-lg h-24 sm:h-32 flex flex-col items-center justify-center p-2 text-center shadow-md shadow-slate-400/5">
                       <span className="text-2xl sm:text-3xl font-black text-slate-500/60 font-mono">
                         {top3[1].score !== null ? Math.round(top3[1].score) : 0}
                       </span>
@@ -207,13 +320,20 @@ export default function LeaderboardDetailPage() {
 
                 {/* 2. Emas (Juara 1) */}
                 {top3[0] ? (
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center animate-rise-1 animate-float-card animate-glow-amber transition-all duration-300 hover:scale-105 active:scale-95 z-10">
                     {/* Siswa Card Info */}
                     <div className="text-center mb-3 space-y-1 w-full px-1">
                       <div className="relative inline-flex scale-110">
-                        <div className="size-12 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center">
-                          <Crown className="size-6 text-amber-500 fill-amber-500/20" />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleConfetti}
+                          disabled={cooldown}
+                          className="size-12 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-500/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-80"
+                          title="Klik untuk merayakan kemenangan 🎉"
+                          aria-label="Klik mahkota juara pertama untuk merayakan kemenangan"
+                        >
+                          <Crown className="size-6 text-amber-500 fill-amber-500/20 animate-float-crown" />
+                        </button>
                         <span className="absolute -bottom-1 -right-1 size-5 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border border-background">
                           1
                         </span>
@@ -229,7 +349,7 @@ export default function LeaderboardDetailPage() {
                       </p>
                     </div>
                     {/* Blok Podium */}
-                    <div className="w-full bg-gradient-to-t from-amber-500/20 to-amber-500/10 border-t-4 border-x border-amber-500 rounded-t-lg h-32 sm:h-44 flex flex-col items-center justify-center p-2 text-center shadow-lg shadow-amber-500/5">
+                    <div className="w-full bg-gradient-to-t from-amber-500/20 to-amber-500/10 border-t-4 border-x border-amber-500 rounded-t-lg h-32 sm:h-44 flex flex-col items-center justify-center p-2 text-center shadow-lg shadow-amber-500/10">
                       <span className="text-3xl sm:text-4xl font-black text-amber-500/80 font-mono">
                         {top3[0].score !== null ? Math.round(top3[0].score) : 0}
                       </span>
@@ -245,11 +365,11 @@ export default function LeaderboardDetailPage() {
 
                 {/* 3. Perunggu (Juara 3) */}
                 {top3[2] ? (
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center animate-rise-3 transition-all duration-300 hover:scale-105 active:scale-95">
                     {/* Siswa Card Info */}
                     <div className="text-center mb-3 space-y-1 w-full px-1">
                       <div className="relative inline-flex">
-                        <div className="size-12 rounded-full bg-orange-600/20 border-2 border-orange-600 flex items-center justify-center">
+                        <div className="size-12 rounded-full bg-orange-600/20 border-2 border-orange-600 flex items-center justify-center shadow-sm shadow-orange-600/5">
                           <Medal className="size-6 text-orange-700" />
                         </div>
                         <span className="absolute -bottom-1 -right-1 size-5 bg-orange-700 text-white rounded-full text-[10px] font-bold flex items-center justify-center border border-background">
@@ -257,7 +377,7 @@ export default function LeaderboardDetailPage() {
                         </span>
                       </div>
                       <p
-                        className="font-bold text-xs sm:text-sm truncate"
+                        className="font-bold text-xs sm:text-sm truncate text-foreground/90"
                         title={top3[2].studentName}
                       >
                         {top3[2].studentName}
@@ -267,7 +387,7 @@ export default function LeaderboardDetailPage() {
                       </p>
                     </div>
                     {/* Blok Podium */}
-                    <div className="w-full bg-gradient-to-t from-orange-600/20 to-orange-600/10 border-t-2 border-x border-orange-600 rounded-t-lg h-20 sm:h-24 flex flex-col items-center justify-center p-2 text-center">
+                    <div className="w-full bg-gradient-to-t from-orange-600/20 to-orange-600/10 border-t-2 border-x border-orange-600 rounded-t-lg h-20 sm:h-24 flex flex-col items-center justify-center p-2 text-center shadow-sm shadow-orange-600/5">
                       <span className="text-2xl sm:text-3xl font-black text-orange-700/60 font-mono">
                         {top3[2].score !== null ? Math.round(top3[2].score) : 0}
                       </span>
@@ -285,7 +405,7 @@ export default function LeaderboardDetailPage() {
 
             {/* Remaining Students Table (Rank 4+) */}
             {remaining.length > 0 && (
-              <Card className="border">
+              <Card className="border relative z-10 bg-background/80 backdrop-blur-sm">
                 <CardHeader className="bg-muted/10">
                   <CardTitle className="text-lg font-heading">
                     Peringkat Susulan
