@@ -320,43 +320,47 @@ export default function LeaderboardDetailPage() {
 
                 {/* 2. Emas (Juara 1) */}
                 {top3[0] ? (
-                  <div className="flex flex-col items-center animate-rise-1 animate-float-card animate-glow-amber transition-all duration-300 hover:scale-105 active:scale-95 z-10">
-                    {/* Siswa Card Info */}
-                    <div className="text-center mb-3 space-y-1 w-full px-1">
-                      <div className="relative inline-flex scale-110">
-                        <button
-                          type="button"
-                          onClick={handleConfetti}
-                          disabled={cooldown}
-                          className="size-12 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-500/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-80"
-                          title="Klik untuk merayakan kemenangan 🎉"
-                          aria-label="Klik mahkota juara pertama untuk merayakan kemenangan"
+                  <div className="animate-rise-1 w-full flex flex-col items-center z-10">
+                    <div className="animate-float-card animate-glow-amber transition-all duration-300 hover:scale-105 active:scale-95 w-full flex flex-col items-center rounded-lg p-1">
+                      {/* Siswa Card Info */}
+                      <div className="text-center mb-3 space-y-1 w-full px-1">
+                        <div className="relative inline-flex scale-110">
+                          <button
+                            type="button"
+                            onClick={handleConfetti}
+                            disabled={cooldown}
+                            className="size-12 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-500/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-80"
+                            title="Klik untuk merayakan kemenangan 🎉"
+                            aria-label="Klik mahkota juara pertama untuk merayakan kemenangan"
+                          >
+                            <Crown className="size-6 text-amber-500 fill-amber-500/20 animate-float-crown" />
+                          </button>
+                          <span className="absolute -bottom-1 -right-1 size-5 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border border-background">
+                            1
+                          </span>
+                        </div>
+                        <p
+                          className="font-extrabold text-sm sm:text-base text-amber-600 dark:text-amber-400 truncate mt-1"
+                          title={top3[0].studentName}
                         >
-                          <Crown className="size-6 text-amber-500 fill-amber-500/20 animate-float-crown" />
-                        </button>
-                        <span className="absolute -bottom-1 -right-1 size-5 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border border-background">
-                          1
+                          {top3[0].studentName}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          ID: {top3[0].studentId || "-"}
+                        </p>
+                      </div>
+                      {/* Blok Podium */}
+                      <div className="w-full bg-gradient-to-t from-amber-500/20 to-amber-500/10 border-t-4 border-x border-amber-500 rounded-t-lg h-32 sm:h-44 flex flex-col items-center justify-center p-2 text-center shadow-lg shadow-amber-500/10">
+                        <span className="text-3xl sm:text-4xl font-black text-amber-500/80 font-mono">
+                          {top3[0].score !== null
+                            ? Math.round(top3[0].score)
+                            : 0}
+                        </span>
+                        <span className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 mt-1">
+                          <Clock className="size-3" />{" "}
+                          {formatDuration(top3[0].durationSeconds)}
                         </span>
                       </div>
-                      <p
-                        className="font-extrabold text-sm sm:text-base text-amber-600 dark:text-amber-400 truncate mt-1"
-                        title={top3[0].studentName}
-                      >
-                        {top3[0].studentName}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        ID: {top3[0].studentId || "-"}
-                      </p>
-                    </div>
-                    {/* Blok Podium */}
-                    <div className="w-full bg-gradient-to-t from-amber-500/20 to-amber-500/10 border-t-4 border-x border-amber-500 rounded-t-lg h-32 sm:h-44 flex flex-col items-center justify-center p-2 text-center shadow-lg shadow-amber-500/10">
-                      <span className="text-3xl sm:text-4xl font-black text-amber-500/80 font-mono">
-                        {top3[0].score !== null ? Math.round(top3[0].score) : 0}
-                      </span>
-                      <span className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 mt-1">
-                        <Clock className="size-3" />{" "}
-                        {formatDuration(top3[0].durationSeconds)}
-                      </span>
                     </div>
                   </div>
                 ) : (
