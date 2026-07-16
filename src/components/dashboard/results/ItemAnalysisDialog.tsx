@@ -57,28 +57,21 @@ export function ItemAnalysisDialog({
               selectedAnalysisItem.options && (
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-muted-foreground uppercase">
-                    Pilihan Jawaban:
+                    Kunci Jawaban:
                   </p>
+
                   <div className="space-y-2">
-                    {selectedAnalysisItem.options.map((opt) => (
-                      <div
-                        key={opt.id}
-                        className={`flex items-start gap-2 p-3 rounded-lg border text-sm ${
-                          opt.isCorrect
-                            ? "bg-emerald-500/5 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-bold"
-                            : "bg-background border-muted"
-                        }`}
-                      >
-                        <div className="mt-0.5">
-                          {opt.isCorrect ? (
-                            <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full border border-muted shrink-0" />
-                          )}
+                    {selectedAnalysisItem.options
+                      .filter((opt) => opt.isCorrect)
+                      .map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-start gap-2 p-3 rounded-lg border text-sm bg-emerald-500/5 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-bold"
+                        >
+                          <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <div>{opt.optionText}</div>
                         </div>
-                        <div>{opt.optionText}</div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               )}

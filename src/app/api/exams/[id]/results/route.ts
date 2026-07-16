@@ -38,7 +38,7 @@ export async function GET(
     // 2. Ambil seluruh usaha pengerjaan (ExamAttempt) siswa
     const attempts = await prisma.examAttempt.findMany({
       where: { examId: id },
-      orderBy: { studentName: "asc" },
+      orderBy: [{ score: "desc" }, { durationSeconds: "asc" }],
       include: {
         answers: {
           include: {
