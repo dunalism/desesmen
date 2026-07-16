@@ -81,29 +81,8 @@ function RegisterForm() {
         displayName: name.trim(),
       });
 
-      // 3. Sync user profile with MySQL using the Next.js backend API
-      const syncResponse = await fetch("/api/auth/sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: user.uid,
-          email: user.email,
-          name: name.trim(),
-        }),
-      });
-
-      if (!syncResponse.ok) {
-        const syncData = await syncResponse.json();
-        // Rollback Firebase session since sync with database failed
-        await auth.signOut();
-        throw new Error(
-          syncData.error || "Gagal melakukan sinkronisasi data ke database.",
-        );
-      }
-
-      // 4. Redirect user to dashboard
+      // 3. Show success alert and redirect to dashboard
+      alert("Berhasil terdaftar!");
       router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Registration Error:", err);
