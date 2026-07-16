@@ -85,7 +85,7 @@ export default function LeaderboardListPage() {
     if (user) {
       router.push("dashboard/exams");
     } else {
-      router.push("/login");
+      router.push("/cbt");
     }
   }
 
