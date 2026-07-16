@@ -117,9 +117,7 @@ export function CreateExamDialog({
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
-            <CardTitle className="text-xl font-bold">
-              Buat Sesi Ujian CBT
-            </CardTitle>
+            <CardTitle className="text-xl font-bold">Buat Sesi Ujian</CardTitle>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -145,7 +143,7 @@ export function CreateExamDialog({
                     const selected = assessments.find((a) => a.id === id);
                     if (selected) {
                       const titleName = selected.title || "Ujian Baru";
-                      setExamTitle(`Sesi CBT - ${titleName}`);
+                      setExamTitle(titleName);
                     }
                   }
                 }}
@@ -304,7 +302,7 @@ export function CreateExamDialog({
               </Button>
               <Button type="submit" disabled={submitting} variant="default">
                 {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Aktifkan Sesi CBT
+                Aktifkan Sesi
               </Button>
             </div>
           </form>

@@ -2,7 +2,12 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams, notFound } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+  deleteUser,
+} from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
   Card,
@@ -15,14 +20,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, User, Mail, Lock, ShieldCheck } from "lucide-react";
+import {
+  Loader2,
+  User,
+  Mail,
+  Lock,
+  ShieldCheck,
+  ArrowLeft,
+} from "lucide-react";
+import { useDialog } from "@/components/ui/dialog-provider";
 
 // RegisterForm component that reads URL parameters and performs validation
 function RegisterForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const secretParam = searchParams.get("secret");
   const expectedSecret = process.env.NEXT_PUBLIC_REGISTRATION_SECRET;
+  const router = useRouter();
+
+  const { showAlert } = useDialog();
 
   // Security Check: If the URL secret parameter is missing or doesn't match,
   // we immediately trigger Next.js notFound() to display a standard 404 page.
@@ -81,9 +96,33 @@ function RegisterForm() {
         displayName: name.trim(),
       });
 
-      // 3. Show success alert and redirect to dashboard
-      alert("Berhasil terdaftar!");
-      router.push("/dashboard");
+      const syncResponse = await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: user.uid,
+          email: user.email,
+          name: user.displayName || user.email.split("@")[0],
+        }),
+      });
+
+      if (!syncResponse.ok) {
+        const syncData = await syncResponse.json();
+        // Rollback Firebase session since sync with DB failed
+        await deleteUser(user);
+        throw new Error(
+          syncData.error || "Gagal melakukan sinkronisasi data ke database.",
+        );
+      }
+
+      showAlert("Pendaftaran Berhasil", "Akun berhasil dibuat.");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      signOut(auth);
     } catch (err: unknown) {
       console.error("Registration Error:", err);
       let errorMessage = "Terjadi kesalahan saat membuat akun Anda.";
@@ -124,10 +163,10 @@ function RegisterForm() {
           <ShieldCheck className="h-6 w-6 text-primary" />
         </div>
         <CardTitle className="text-2xl font-bold tracking-tight">
-          Pendaftaran Admin
+          Pendaftaran Akun
         </CardTitle>
         <CardDescription className="text-sm">
-          Buat akun admin baru dengan kredensial email & password
+          Buat akun baru dengan kredensial email & password
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -144,7 +183,7 @@ function RegisterForm() {
               <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="name"
-                placeholder="Admin Desesmen"
+                placeholder="Admin Epalio"
                 className="pl-9 h-11"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -161,7 +200,7 @@ function RegisterForm() {
               <Input
                 id="email"
                 type="email"
-                placeholder="nama@domain.com"
+                placeholder="nama@email.com"
                 className="pl-9 h-11"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -205,19 +244,24 @@ function RegisterForm() {
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-2 mt-2 transition-transform active:scale-[0.98] font-bold"
-          >
+          <Button type="submit" disabled={loading} className="w-full h-11">
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "Mendaftarkan Akun..." : "Daftar Akun Baru"}
+          </Button>
+          <Button
+            className="w-full h-11"
+            type="button"
+            variant="ghost"
+            onClick={() => router.push("/login")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Kembali ke Halaman Login
           </Button>
         </form>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground justify-center text-center pb-6 border-t pt-4">
         Halaman registrasi ini bersifat rahasia dan hanya dapat diakses oleh
-        admin utama aplikasi.
+        pengembang aplikasi.
       </CardFooter>
     </Card>
   );

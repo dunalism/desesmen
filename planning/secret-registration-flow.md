@@ -21,9 +21,9 @@ Dokumen ini menjelaskan perencanaan untuk membuat halaman registrasi akun baru y
 
 - Menambahkan kunci rahasia registrasi:
   ```env
-  NEXT_PUBLIC_REGISTRATION_SECRET="desesmen-rahasia-2026"
+  NEXT_PUBLIC_REGISTRATION_SECRET="Epalio-rahasia-2026"
   ```
-  _(Catatan: Menggunakan `NEXT_PUBLIC_` karena pencocokan URL parameter dilakukan di Client Component Next.js sebelum merender Form Registrasi)._
+  _(Catatan: Menggunakan `NEXT_PUBLIC_` karena pencocokan URL parameter dilakukan di Client Component Next.js sebelum merender Form Registrasi).\_
 
 ### Langkah 3.2: Implementasi Halaman Registrasi (`src/app/register/page.tsx`)
 

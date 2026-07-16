@@ -185,8 +185,7 @@ export default function BankSoalPage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Bank Soal</h2>
             <p className="text-sm text-muted-foreground">
-              Daftar Paket Soal terstruktur yang telah Anda buat menggunakan
-              asisten AI.
+              Daftar Paket Soal yang telah Anda buat.
             </p>
           </div>
         </div>

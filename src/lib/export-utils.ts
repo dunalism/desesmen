@@ -358,7 +358,7 @@ export function generateAssessmentHtml(
             <!-- Header Ujian -->
             <div class="main-header">
               <h1>${displayTitle}</h1>
-              <p>Diekspor dari Desesmen</p>
+              <p>Diekspor dari Epalio</p>
             </div>
 
             <!-- Konten Soal -->
@@ -452,7 +452,7 @@ export function generateAssessmentHtml(
         <!-- Header Ujian -->
         <div class="main-header">
           <h1>${displayTitle}</h1>
-          <p>Diekspor dari Desesmen</p>
+          <p>Diekspor dari Epalio</p>
         </div>
 
         <!-- Konten Soal -->
@@ -521,7 +521,7 @@ export function downloadAsWord(
       alignment: AlignmentType.CENTER,
       children: [
         new Run({
-          text: "Diekspor dari Desesmen",
+          text: "Diekspor dari Epalio",
           italics: true,
           size: 20, // 10pt
         }),

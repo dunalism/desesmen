@@ -731,8 +731,7 @@ export default function CbtExamPage({
                   <li>
                     Sistem mendeteksi jika Anda{" "}
                     <span className="text-destructive font-bold">
-                      keluar dari fullscreen, menekan Alt+Tab, berpindah tab,
-                      atau meminimalkan browser
+                      keluar dari fullscreen.
                     </span>
                     .
                   </li>

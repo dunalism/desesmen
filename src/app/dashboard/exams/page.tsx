@@ -145,11 +145,10 @@ export default function ExamsDashboardPage() {
     );
   };
 
-  // Handler menghapus ujian CBT
   const handleDeleteExam = async (id: string, title: string) => {
     showConfirm(
       "Hapus Sesi Ujian",
-      `Apakah Anda yakin ingin menghapus ujian "${title}"? Tindakan ini permanen. Seluruh lembar jawaban siswa dan file JSON statis di server akan dihapus!`,
+      `Apakah Anda yakin ingin menghapus ujian "${title}"? Tindakan ini permanen. Seluruh lembar jawaban siswa dihapus!`,
       async () => {
         try {
           const response = await fetch(`/api/exams/${id}`, {
@@ -193,9 +192,7 @@ export default function ExamsDashboardPage() {
       {/* HEADER SECTION */}
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            Sesi Ujian CBT
-          </h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Sesi Ujian</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Kelola ujian mandiri tangguh dengan infrastruktur server hemat
             biaya.
@@ -206,7 +203,7 @@ export default function ExamsDashboardPage() {
           variant="default"
           size="lg"
         >
-          + Buat Ujian CBT Baru
+          + Buat Ujian Baru
         </Button>
       </div>
 
@@ -220,7 +217,7 @@ export default function ExamsDashboardPage() {
             Belum Ada Sesi Ujian
           </CardTitle>
           <CardDescription className="mt-1 max-w-md">
-            Anda belum pernah membuat sesi ujian CBT. Klik tombol di atas untuk
+            Anda belum pernah membuat sesi ujian. Klik tombol di atas untuk
             mengaktifkan sesi ujian baru dari paket soal yang sudah Anda miliki.
           </CardDescription>
         </Card>

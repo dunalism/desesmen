@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { useEffect } from "react";
 import { useReveal } from "@/lib/useReveal";
 
 export default function LandingPage() {
@@ -37,7 +36,7 @@ export default function LandingPage() {
               <BookOpenCheck className="h-6 w-6" />
             </div>
             <Link href="/" className="font-extrabold text-xl tracking-tight">
-              Desesmen
+              Epalio
             </Link>
           </div>
           <nav className="hidden md:flex gap-6 text-sm font-medium text-muted-foreground">
@@ -98,7 +97,7 @@ export default function LandingPage() {
                 className="text-lg reveal-up delay-2 ... md:text-xl animate-subtitle text-muted-foreground mb-8 leading-relaxed"
               >
                 Lupakan lembur malam hanya untuk mengetik bank soal.{" "}
-                <strong className="text-foreground">Desesmen</strong> adalah
+                <strong className="text-foreground">Epalio</strong> adalah
                 asisten pintar berbasis AI yang mengubah gambar materi,
                 rangkuman, atau ide spontan Anda menjadi paket asesmen siap uji
                 dalam hitungan detik. Biarkan AI yang bekerja, Anda cukup pantau
@@ -398,7 +397,7 @@ export default function LandingPage() {
                 <blockquote className="text-lg md:text-xl font-medium leading-relaxed mb-6 text-primary italic">
                   &quot;Dulu saya harus menghabiskan waktu libur akhir pekan
                   hanya untuk menyusun soal Penilaian Akhir Semester. Sejak
-                  menggunakan Desesmen, saya bisa membuat 40 soal pilihan ganda
+                  menggunakan Epalio, saya bisa membuat 40 soal pilihan ganda
                   berbobot HOTS hanya dalam waktu kurang dari 5 menit sambil
                   minum teh hangat. Fitur analisis butir soalnya sangat membantu
                   rapat evaluasi sekolah!&quot;
@@ -450,7 +449,7 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer className="border-t bg-background py-8">
         <div className="container mx-auto max-w-7xl px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Desesmen</p>
+          <p>© {new Date().getFullYear()} Epalio</p>
         </div>
       </footer>
     </div>

@@ -142,7 +142,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Sesi ujian CBT berhasil diaktifkan.",
+        message: "Sesi ujian berhasil diaktifkan.",
         data: exam,
       },
       { status: 201 },

@@ -8,8 +8,8 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Desesmen",
-  description: "Buat soal otomatis dan asesmen praktis",
+  title: "Epalio",
+  description: "Smart Assessment",
 };
 
 export default function RootLayout({

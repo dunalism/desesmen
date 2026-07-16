@@ -19,9 +19,11 @@ import {
   Search,
   BookOpenCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 
 interface LeaderboardExam {
   id: string;
@@ -48,6 +50,7 @@ export default function LeaderboardListPage() {
   } = useSWR<LeaderboardExam[]>("/api/leaderboards", fetcher);
 
   const [search, setSearch] = useState("");
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   const filteredExams = exams?.filter(
@@ -66,6 +69,26 @@ export default function LeaderboardListPage() {
     });
   };
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        setUser(null);
+      } else {
+        setUser(currentUser);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  function handleBack() {
+    if (user) {
+      router.push("dashboard/exams");
+    } else {
+      router.push("/login");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-muted/40 dark:bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -74,7 +97,7 @@ export default function LeaderboardListPage() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => router.back()}
+                onClick={() => handleBack()}
                 variant="outline"
                 size="sm"
                 className="gap-2"
@@ -87,8 +110,8 @@ export default function LeaderboardListPage() {
               Papan Peringkat Publik
             </h1>
             <p className="text-muted-foreground text-sm">
-              Lihat hasil perjuangan belajar siswa pada sesi ujian CBT yang
-              telah diselesaikan.
+              Lihat hasil perjuangan belajar siswa pada sesi ujian yang telah
+              diselesaikan.
             </p>
           </div>
         </div>
@@ -138,7 +161,7 @@ export default function LeaderboardListPage() {
             <p className="text-muted-foreground text-sm max-w-sm mt-1">
               {search
                 ? "Tidak ada hasil yang cocok dengan kata kunci pencarian Anda."
-                : "Saat ini belum ada sesi ujian CBT yang ditutup atau diizinkan memiliki papan peringkat."}
+                : "Saat ini belum ada sesi ujian yang ditutup atau diizinkan memiliki papan peringkat."}
             </p>
           </Card>
         ) : (

@@ -8,12 +8,12 @@ import { auth } from "@/lib/firebase";
 import {
   Loader2,
   LogOut,
-  BookOpen,
   Menu,
   Home,
   FileText,
   ClipboardList,
   Trophy,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -110,14 +110,14 @@ export default function DashboardLayout({
           {/* LOGO APLIKASI */}
           <Link href="/" className="flex items-center gap-2">
             <div className="bg-primary/10 p-2 rounded-lg text-primary">
-              <BookOpen className="h-6 w-6" />
+              <ClipboardCheck className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-sm sm:text-lg font-bold tracking-tight leading-none md:leading-tight">
-                Desesmen
+                Epalio
               </h1>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:block">
-                Asesmen Praktis
+                Smart Assessment
               </p>
             </div>
           </Link>
@@ -178,10 +178,10 @@ export default function DashboardLayout({
                   <SheetHeader className="text-left">
                     <SheetTitle className="flex items-center gap-2">
                       <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                        <BookOpen className="h-5 w-5" />
+                        <ClipboardCheck className="h-5 w-5" />
                       </div>
                       <span className="font-bold tracking-tight text-base">
-                        Desesmen
+                        Epalio
                       </span>
                     </SheetTitle>
                   </SheetHeader>

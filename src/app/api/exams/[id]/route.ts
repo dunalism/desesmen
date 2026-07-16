@@ -90,7 +90,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message:
-        "Sesi ujian CBT beserta seluruh data pengerjaan siswa dan cache statis berhasil dihapus.",
+        "Sesi ujian beserta seluruh data pengerjaan siswa dan cache statis berhasil dihapus.",
     });
   } catch (error) {
     console.error("Error deleting exam:", error);

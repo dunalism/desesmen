@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -62,29 +63,6 @@ export default function LoginPage() {
         throw new Error("Gagal memperoleh data pengguna dari Firebase.");
       }
 
-      // 2. Sync user profile with MySQL using Next.js backend API
-      const displayName = user.displayName || user.email.split("@")[0];
-      const syncResponse = await fetch("/api/auth/sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: user.uid,
-          email: user.email,
-          name: displayName,
-        }),
-      });
-
-      if (!syncResponse.ok) {
-        const syncData = await syncResponse.json();
-        // Rollback Firebase session since sync with DB failed
-        await auth.signOut();
-        throw new Error(
-          syncData.error || "Gagal melakukan sinkronisasi data ke database.",
-        );
-      }
-
       // Redirect user to dashboard
       router.push("/dashboard");
     } catch (err: any) {
@@ -137,7 +115,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center min-h-[80vh] px-4">
+    <div className="flex-1 flex items-center justify-center min-h-screen px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
@@ -147,8 +125,7 @@ export default function LoginPage() {
             Masuk ke Aplikasi
           </CardTitle>
           <CardDescription className="text-sm">
-            Masukkan email dan kata sandi Anda untuk masuk ke sistem pembuatan
-            soal otomatis
+            Masukkan email dan kata sandi Anda untuk masuk ke aplikasi Epalio
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,7 +143,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="nama@domain.com"
+                  placeholder="nama@email.com"
                   className="pl-9 h-11"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
