@@ -103,11 +103,29 @@ export default function CbtExamPage({
     { timestamp: string; type: string; reason: string }[]
   >([]);
   const [isOutFullscreen, setIsOutFullscreen] = useState(false);
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
 
   // Initialize and load data from localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
+        const doc = document as unknown as Record<string, unknown>;
+        const docEl = document.documentElement as unknown as Record<
+          string,
+          unknown
+        >;
+        const hasFullscreenSupport = !!(
+          document.documentElement.requestFullscreen ||
+          typeof docEl.webkitRequestFullscreen === "function" ||
+          typeof docEl.mozRequestFullScreen === "function" ||
+          typeof docEl.msRequestFullscreen === "function" ||
+          document.fullscreenEnabled ||
+          typeof doc.webkitFullscreenEnabled === "boolean" ||
+          typeof doc.mozFullScreenEnabled === "boolean" ||
+          typeof doc.msFullscreenEnabled === "boolean"
+        );
+        setIsFullscreenSupported(hasFullscreenSupport);
+
         const savedSession = localStorage.getItem(
           `cbt-student-session-${token}`,
         );
@@ -178,8 +196,10 @@ export default function CbtExamPage({
             }
             if (parsed.isExamStarted) {
               setIsExamStarted(true);
-              // Jika sudah mulai lalu refresh, paksa masuk fullscreen kembali
-              setIsOutFullscreen(true);
+              // Jika sudah mulai lalu refresh, paksa masuk fullscreen kembali (hanya jika didukung)
+              if (hasFullscreenSupport) {
+                setIsOutFullscreen(true);
+              }
             }
           } catch (e) {
             console.error("Error parsing cbt-session:", e);
@@ -262,8 +282,30 @@ export default function CbtExamPage({
     );
   };
 
-  // MEMULAI UJIAN SECARA AMAN (MASUK FULLSCREEN)
+  // MEMULAI UJIAN SECARA AMAN (MASUK FULLSCREEN JIKA DIDUKUNG)
   const handleStartExamSecure = async () => {
+    if (!isFullscreenSupported) {
+      setIsExamStarted(true);
+      setIsOutFullscreen(false);
+
+      const currentSessionData = sessionStorage.getItem(`cbt-session-${token}`);
+      let parsed = {};
+      if (currentSessionData) {
+        try {
+          parsed = JSON.parse(currentSessionData);
+        } catch {}
+      }
+      sessionStorage.setItem(
+        `cbt-session-${token}`,
+        JSON.stringify({
+          ...parsed,
+          isExamStarted: true,
+          answers,
+        }),
+      );
+      return;
+    }
+
     try {
       const element = document.documentElement;
       const el = element as unknown as Record<string, unknown>;
@@ -385,7 +427,7 @@ export default function CbtExamPage({
   );
 
   // Submitting the Exam
-  const performSubmission = async () => {
+  const performSubmission = useCallback(async () => {
     if (!student || !exam) return;
 
     setSubmitting(true);
@@ -505,7 +547,7 @@ export default function CbtExamPage({
       setSubmitting(false);
       setJitterTime(null);
     }
-  };
+  }, [student, exam, questions, answers, token, router, showAlert]);
 
   const handleSubmitClick = () => {
     // Check if there are unanswered questions
@@ -575,10 +617,11 @@ export default function CbtExamPage({
       };
       triggerAutoSubmit();
     }
-  }, [violationCount, isSuccess, submitting, isExamStarted]);
+  }, [violationCount, isSuccess, submitting, isExamStarted, performSubmission]);
 
   // Monitoring Fullscreen
   useEffect(() => {
+    if (!isFullscreenSupported) return; // SKIP jika browser tidak mendukung Fullscreen API
     if (!isExamStarted || isSuccess || submitting || violationCount >= 4)
       return;
 
@@ -615,7 +658,14 @@ export default function CbtExamPage({
         handleFullscreenChange,
       );
     };
-  }, [isExamStarted, isSuccess, submitting, violationCount, registerViolation]);
+  }, [
+    isExamStarted,
+    isSuccess,
+    submitting,
+    violationCount,
+    registerViolation,
+    isFullscreenSupported,
+  ]);
 
   // Monitoring Visibility (Page Switch / Minimize)
   useEffect(() => {
