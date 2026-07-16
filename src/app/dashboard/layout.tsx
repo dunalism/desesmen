@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sheet";
 import { CartProvider } from "@/lib/cart-context";
 import { FloatingCartBar } from "@/components/dashboard/FloatingCartBar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function DashboardLayout({
   children,
@@ -142,11 +143,22 @@ export default function DashboardLayout({
 
         {/* KANAN NAVBAR: PROFIL DESKTOP & MOBILE MENU TRIGGER */}
         <div className="flex items-center gap-4">
-          <div className="text-right hidden md:block">
-            <p className="text-sm font-semibold">
-              {user.displayName || "Guru"}
-            </p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+          <div className="items-center space-x-2 text-right hidden md:flex">
+            <Avatar>
+              <AvatarImage
+                src={user.photoURL || ""}
+                alt={user.displayName! || user.email!}
+              />
+              <AvatarFallback>
+                {user.displayName?.charAt(0) || user.email!.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <p className="text-sm font-semibold">
+                {user.displayName || "Guru"}
+              </p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
           </div>
           <Button
             onClick={handleLogout}
@@ -212,13 +224,24 @@ export default function DashboardLayout({
 
                 {/* Info Profil & Logout Mobile */}
                 <div className="border-t pt-4 space-y-4">
-                  <div className="px-2">
-                    <p className="text-sm font-bold text-foreground truncate">
-                      {user.displayName || "Guru"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </p>
+                  <div className="px-2 text-right flex gap-2">
+                    <Avatar>
+                      <AvatarImage
+                        src={user.photoURL || ""}
+                        alt={user.displayName! || user.email!}
+                      />
+                      <AvatarFallback>
+                        {user.displayName?.charAt(0) || user.email!.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold">
+                        {user.displayName || "Guru"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
                   </div>
                   <Button
                     onClick={handleLogout}

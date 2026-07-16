@@ -14,8 +14,8 @@ import {
   Star,
   Clock,
   AlertCircle,
-  BookOpenCheck,
   ArrowRight,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-primary/10 p-2 rounded-lg text-primary">
-              <BookOpenCheck className="h-6 w-6" />
+              <ClipboardCheck className="h-6 w-6" />
             </div>
             <Link href="/" className="font-extrabold text-xl tracking-tight">
               Epalio
