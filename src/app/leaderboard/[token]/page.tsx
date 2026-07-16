@@ -155,67 +155,6 @@ export default function LeaderboardDetailPage() {
 
   return (
     <div className="min-h-screen bg-muted/40 dark:bg-background py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* CSS Keyframes Animations */}
-      <style>{`
-        @keyframes riseUp {
-          from {
-            opacity: 0;
-            transform: translateY(40px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes floatCard {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-6px);
-          }
-        }
-        @keyframes floatCrown {
-          0%, 100% {
-            transform: translateY(0) rotate(-2deg) scale(1);
-          }
-          50% {
-            transform: translateY(-4px) rotate(2deg) scale(1.05);
-          }
-        }
-        @keyframes glowAmber {
-          0%, 100% {
-            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15), 0 8px 10px -6px rgba(245, 158, 11, 0.15);
-          }
-          50% {
-            box-shadow: 0 20px 35px -5px rgba(245, 158, 11, 0.35), 0 12px 18px -6px rgba(245, 158, 11, 0.35);
-          }
-        }
-        .animate-rise-3 {
-          animation: riseUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          opacity: 0;
-        }
-        .animate-rise-2 {
-          animation: riseUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          animation-delay: 150ms;
-          opacity: 0;
-        }
-        .animate-rise-1 {
-          animation: riseUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          animation-delay: 300ms;
-          opacity: 0;
-        }
-        .animate-float-card {
-          animation: floatCard 2.5s ease-in-out infinite;
-        }
-        .animate-float-crown {
-          animation: floatCrown 2s ease-in-out infinite;
-        }
-        .animate-glow-amber {
-          animation: glowAmber 3s ease-in-out infinite;
-        }
-      `}</style>
-
       {/* Background Trophy Decoration */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[500px] aspect-square pointer-events-none z-0 flex items-center justify-center">
         <Trophy
@@ -282,7 +221,7 @@ export default function LeaderboardDetailPage() {
 
                 {/* 1. Perak (Juara 2) */}
                 {top3[1] ? (
-                  <div className="flex flex-col items-center animate-rise-2 transition-all duration-300 hover:scale-105 active:scale-95">
+                  <div className="flex flex-col items-center animate-rise-2 transition-all duration-300 hover:scale-105">
                     {/* Siswa Card Info */}
                     <div className="text-center mb-3 space-y-1 w-full px-1">
                       <div className="relative inline-flex">
@@ -369,7 +308,7 @@ export default function LeaderboardDetailPage() {
 
                 {/* 3. Perunggu (Juara 3) */}
                 {top3[2] ? (
-                  <div className="flex flex-col items-center animate-rise-3 transition-all duration-300 hover:scale-105 active:scale-95">
+                  <div className="flex flex-col items-center animate-rise-3 transition-all duration-300 hover:scale-105">
                     {/* Siswa Card Info */}
                     <div className="text-center mb-3 space-y-1 w-full px-1">
                       <div className="relative inline-flex">
