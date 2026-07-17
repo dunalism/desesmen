@@ -95,7 +95,6 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [imgbbApiKey, setImgbbApiKey] = useState("");
 
   // UI Flow State
   const [isEditing, setIsEditing] = useState(false);
@@ -118,14 +117,6 @@ export default function ProfilePage() {
     });
 
     return () => unsubscribe();
-  }, []);
-
-  // Set API Key separately to avoid synchronous call in onAuthStateChanged effect block
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedApiKey = localStorage.getItem("imgbb_api_key") || "";
-      // Avoid calling state synchronously if it matches, but since it runs once on mount, we can use a functional check or load initial value directly.
-    }
   }, []);
 
   if (loadingSession) {
@@ -162,15 +153,7 @@ export default function ProfilePage() {
 
   const hasPasswordChanges = newPassword.trim() !== "";
 
-  // ImgBB API key update detection
-  const originalApiKey =
-    typeof window !== "undefined"
-      ? localStorage.getItem("imgbb_api_key") || ""
-      : "";
-  const hasApiKeyChanges = imgbbApiKey.trim() !== originalApiKey;
-
-  const hasChanges =
-    hasProfileChanges || hasPasswordChanges || hasApiKeyChanges;
+  const hasChanges = hasProfileChanges || hasPasswordChanges;
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -198,12 +181,11 @@ export default function ProfilePage() {
         return;
       }
 
-      const activeApiKey =
-        imgbbApiKey.trim() || process.env.NEXT_PUBLIC_IMGBB_API_KEY || "";
+      const activeApiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY || "";
       if (!activeApiKey) {
         showAlert(
-          "ImgBB API Key Diperlukan",
-          "Harap masukkan ImgBB API Key Anda di kolom bawah terlebih dahulu untuk mengunggah foto profil secara resmi.",
+          "Konfigurasi Berkas .env Diperlukan",
+          "Variabel NEXT_PUBLIC_IMGBB_API_KEY belum didefinisikan di berkas .env Anda. Harap masukkan kunci API terlebih dahulu untuk mengaktifkan fitur unggah foto.",
         );
         return;
       }
@@ -287,12 +269,6 @@ export default function ProfilePage() {
     const updatedFields: string[] = [];
 
     try {
-      // Save ImgBB API Key to local storage
-      if (hasApiKeyChanges) {
-        localStorage.setItem("imgbb_api_key", imgbbApiKey.trim());
-        updatedFields.push("Kunci API ImgBB");
-      }
-
       // 1. Update Profile (DisplayName & photoURL directly to Firebase Auth!)
       if (hasProfileChanges) {
         const payload: {
@@ -502,44 +478,6 @@ export default function ProfilePage() {
                 <p className="text-xs text-muted-foreground/80 flex items-center gap-1">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   Email utama tidak dapat diubah untuk keamanan akun.
-                </p>
-              </div>
-
-              {/* ImgBB API Key Input */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="imgbbApiKey"
-                    className="font-semibold text-sm"
-                  >
-                    ImgBB API Key
-                  </Label>
-                  <a
-                    href="https://api.imgbb.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-primary hover:underline font-medium"
-                  >
-                    Dapatkan Kunci API Gratis ↗
-                  </a>
-                </div>
-                <Input
-                  id="imgbbApiKey"
-                  type="password"
-                  value={imgbbApiKey}
-                  onChange={(e) => setImgbbApiKey(e.target.value)}
-                  disabled={!isEditing}
-                  placeholder={
-                    process.env.NEXT_PUBLIC_IMGBB_API_KEY
-                      ? "Menggunakan Kunci API dari Environment"
-                      : "Masukkan ImgBB API Key Anda"
-                  }
-                  className="h-11 pl-3 rounded-lg w-full font-mono"
-                />
-                <p className="text-xs text-muted-foreground/80">
-                  Digunakan untuk mengunggah dan melacak foto profil Anda di
-                  awan (cloud) agar menghasilkan URL pendek yang responsif dan
-                  hemat bandwidth.
                 </p>
               </div>
             </div>
