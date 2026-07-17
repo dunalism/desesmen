@@ -221,6 +221,7 @@ export default function ExamResultsPage({
       {/* DIALOG DETAIL BUTIR SOAL */}
       <ItemAnalysisDialog
         selectedAnalysisItem={selectedAnalysisItem}
+        attempts={attempts}
         onClose={() => setSelectedAnalysisItem(null)}
       />
 
