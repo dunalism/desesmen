@@ -97,7 +97,12 @@ export default function ProfilePage() {
       if (currentUser) {
         setUser(currentUser);
         setDisplayName(currentUser.displayName || "");
-        setPhotoURL(currentUser.photoURL || "");
+
+        // Get custom avatar from local storage if available, otherwise fallback to photoURL
+        const storedLocalAvatar = localStorage.getItem(
+          `user_avatar_base64_${currentUser.uid}`,
+        );
+        setPhotoURL(storedLocalAvatar || currentUser.photoURL || "");
       }
       setLoadingSession(false);
     });
@@ -123,10 +128,19 @@ export default function ProfilePage() {
     );
   }
 
-  // Check if form actually has changes
+  // Check if form actually has changes (including our custom local avatar)
+  const getOriginalAvatar = () => {
+    if (!user) return "";
+    return (
+      localStorage.getItem(`user_avatar_base64_${user.uid}`) ||
+      user.photoURL ||
+      ""
+    );
+  };
+
   const hasProfileChanges =
     displayName !== (user.displayName || "") ||
-    photoURL !== (user.photoURL || "");
+    photoURL !== getOriginalAvatar();
 
   const hasPasswordChanges = newPassword.trim() !== "";
 
@@ -138,7 +152,7 @@ export default function ProfilePage() {
 
   const handleCancelClick = () => {
     setDisplayName(user.displayName || "");
-    setPhotoURL(user.photoURL || "");
+    setPhotoURL(getOriginalAvatar());
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -200,17 +214,27 @@ export default function ProfilePage() {
     const updatedFields: string[] = [];
 
     try {
-      // 1. Update Profile (DisplayName / PhotoURL)
+      // 1. Update Profile (DisplayName to Firebase Auth, PhotoURL Base64 to LocalStorage)
       if (hasProfileChanges) {
+        // We only update displayName in Firebase to avoid 'Photo URL too long' error
         await updateProfile(user, {
           displayName: displayName.trim() || null,
-          photoURL: photoURL || null,
         });
+
+        // Save Photo Base64 to LocalStorage under user specific key
+        if (photoURL !== getOriginalAvatar()) {
+          if (photoURL) {
+            localStorage.setItem(`user_avatar_base64_${user.uid}`, photoURL);
+          } else {
+            localStorage.removeItem(`user_avatar_base64_${user.uid}`);
+          }
+          // Dispatch custom event so the layout can listen and update instantly
+          window.dispatchEvent(new Event("localAvatarUpdated"));
+          updatedFields.push("Foto Profil");
+        }
+
         if (displayName !== (user.displayName || "")) {
           updatedFields.push("Nama Lengkap");
-        }
-        if (photoURL !== (user.photoURL || "")) {
-          updatedFields.push("Foto Profil");
         }
       }
 

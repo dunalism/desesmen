@@ -36,9 +36,39 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Watch for local avatar updates (e.g. from profile page)
+  useEffect(() => {
+    const getInitialAvatar = () => {
+      if (user) {
+        const stored = localStorage.getItem(`user_avatar_base64_${user.uid}`);
+        setLocalAvatar(stored);
+      } else {
+        setLocalAvatar(null);
+      }
+    };
+    getInitialAvatar();
+  }, [user]);
+
+  // Handle custom events or storage events to sync avatar across layout immediately
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      if (user) {
+        const stored = localStorage.getItem(`user_avatar_base64_${user.uid}`);
+        setLocalAvatar(stored);
+      }
+    };
+    window.addEventListener("localAvatarUpdated", handleAvatarUpdate);
+    window.addEventListener("storage", handleAvatarUpdate);
+    return () => {
+      window.removeEventListener("localAvatarUpdated", handleAvatarUpdate);
+      window.removeEventListener("storage", handleAvatarUpdate);
+    };
+  }, [user]);
 
   const navigationItems = [
     { href: "/dashboard", label: "Beranda", icon: Home },
@@ -149,7 +179,7 @@ export default function DashboardLayout({
           >
             <Avatar>
               <AvatarImage
-                src={user.photoURL || ""}
+                src={localAvatar || user.photoURL || ""}
                 alt={user.displayName! || user.email!}
               />
               <AvatarFallback>
@@ -234,7 +264,7 @@ export default function DashboardLayout({
                   >
                     <Avatar>
                       <AvatarImage
-                        src={user.photoURL || ""}
+                        src={localAvatar || user.photoURL || ""}
                         alt={user.displayName! || user.email!}
                       />
                       <AvatarFallback>
