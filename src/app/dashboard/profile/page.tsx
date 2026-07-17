@@ -211,7 +211,17 @@ export default function ProfilePage() {
 
         const result = await response.json();
         if (result.success) {
-          const shortUrl = result.data.url;
+          let shortUrl = result.data.url;
+
+          // Replace i.ibb.co with i.ibb.co.com for ISP DNS bypass compatibility
+          if (
+            shortUrl &&
+            shortUrl.includes("i.ibb.co") &&
+            !shortUrl.includes("i.ibb.co.com")
+          ) {
+            shortUrl = shortUrl.replace("i.ibb.co", "i.ibb.co.com");
+          }
+
           setPhotoURL(shortUrl);
           showAlert(
             "Foto Profil Diunggah",
