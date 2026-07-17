@@ -143,7 +143,10 @@ export default function DashboardLayout({
 
         {/* KANAN NAVBAR: PROFIL DESKTOP & MOBILE MENU TRIGGER */}
         <div className="flex items-center gap-4">
-          <div className="items-center space-x-2 text-right hidden md:flex">
+          <Link
+            href="/dashboard/profile"
+            className="items-center space-x-2 text-right hidden md:flex hover:opacity-80 transition-opacity"
+          >
             <Avatar>
               <AvatarImage
                 src={user.photoURL || ""}
@@ -159,7 +162,7 @@ export default function DashboardLayout({
               </p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
-          </div>
+          </Link>
           <Button
             onClick={handleLogout}
             variant="ghost"
@@ -224,7 +227,11 @@ export default function DashboardLayout({
 
                 {/* Info Profil & Logout Mobile */}
                 <div className="border-t pt-4 space-y-4">
-                  <div className="px-2 text-right flex gap-2">
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="px-2 text-right flex gap-2 hover:bg-muted p-2 rounded-xl transition-colors"
+                  >
                     <Avatar>
                       <AvatarImage
                         src={user.photoURL || ""}
@@ -242,7 +249,7 @@ export default function DashboardLayout({
                         {user.email}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   <Button
                     onClick={handleLogout}
                     variant="destructive"
