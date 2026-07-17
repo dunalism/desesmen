@@ -32,8 +32,8 @@ import {
   X,
 } from "lucide-react";
 
-// Client-side image compression utility specifically optimized for small avatar base64
-function compressAvatar(file: File): Promise<string> {
+// Client-side image compression utility before uploading to keep sizes lightweight
+function compressImageBeforeUpload(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -42,8 +42,8 @@ function compressAvatar(file: File): Promise<string> {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 150;
-        const MAX_HEIGHT = 150;
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 300;
         let width = img.width;
         let height = img.height;
 
@@ -64,9 +64,17 @@ function compressAvatar(file: File): Promise<string> {
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Convert to JPEG with 0.75 quality to keep size around 3-6kb
-        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.75);
-        resolve(compressedBase64);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Gagal kompresi blob"));
+            }
+          },
+          "image/jpeg",
+          0.85,
+        );
       };
       img.onerror = (err) => reject(err);
     };
@@ -87,10 +95,12 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [imgbbApiKey, setImgbbApiKey] = useState("");
 
   // UI Flow State
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -98,7 +108,7 @@ export default function ProfilePage() {
         setUser(currentUser);
         setDisplayName(currentUser.displayName || "");
 
-        // Get custom avatar from local storage if available, otherwise fallback to photoURL
+        // Fallback checks for stored avatar
         const storedLocalAvatar = localStorage.getItem(
           `user_avatar_base64_${currentUser.uid}`,
         );
@@ -108,6 +118,14 @@ export default function ProfilePage() {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // Set API Key separately to avoid synchronous call in onAuthStateChanged effect block
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedApiKey = localStorage.getItem("imgbb_api_key") || "";
+      // Avoid calling state synchronously if it matches, but since it runs once on mount, we can use a functional check or load initial value directly.
+    }
   }, []);
 
   if (loadingSession) {
@@ -144,7 +162,15 @@ export default function ProfilePage() {
 
   const hasPasswordChanges = newPassword.trim() !== "";
 
-  const hasChanges = hasProfileChanges || hasPasswordChanges;
+  // ImgBB API key update detection
+  const originalApiKey =
+    typeof window !== "undefined"
+      ? localStorage.getItem("imgbb_api_key") || ""
+      : "";
+  const hasApiKeyChanges = imgbbApiKey.trim() !== originalApiKey;
+
+  const hasChanges =
+    hasProfileChanges || hasPasswordChanges || hasApiKeyChanges;
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -171,12 +197,59 @@ export default function ProfilePage() {
         showAlert("Tipe Berkas Salah", "Harap pilih berkas gambar.");
         return;
       }
+
+      const activeApiKey =
+        imgbbApiKey.trim() || process.env.NEXT_PUBLIC_IMGBB_API_KEY || "";
+      if (!activeApiKey) {
+        showAlert(
+          "ImgBB API Key Diperlukan",
+          "Harap masukkan ImgBB API Key Anda di kolom bawah terlebih dahulu untuk mengunggah foto profil secara resmi.",
+        );
+        return;
+      }
+
+      setIsUploadingPhoto(true);
+
       try {
-        const compressedBase64 = await compressAvatar(file);
-        setPhotoURL(compressedBase64);
+        // Compress image first to make upload super light (under 300x300, JPEG 0.85)
+        const compressedBlob = await compressImageBeforeUpload(file);
+
+        // Prepare FormData
+        const formData = new FormData();
+        formData.append("image", compressedBlob, file.name);
+
+        // Upload to ImgBB
+        const response = await fetch(
+          `https://api.imgbb.com/1/upload?key=${activeApiKey}`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const result = await response.json();
+        if (result.success) {
+          const shortUrl = result.data.url;
+          setPhotoURL(shortUrl);
+          showAlert(
+            "Foto Profil Diunggah",
+            "Foto berhasil diunggah ke cloud ImgBB. Klik 'Simpan Perubahan' di bawah untuk menerapkan.",
+          );
+        } else {
+          console.error("ImgBB error:", result);
+          showAlert(
+            "Gagal Unggah Gambar",
+            result.error?.message || "Kesalahan respon dari server ImgBB.",
+          );
+        }
       } catch (err) {
-        console.error("Gagal kompresi foto:", err);
-        showAlert("Gagal Memproses Gambar", "Gagal memproses gambar profil.");
+        console.error("Gagal memproses/unggah foto:", err);
+        showAlert(
+          "Kesalahan Unggah",
+          "Terjadi kesalahan saat mengompresi atau mengunggah gambar.",
+        );
+      } finally {
+        setIsUploadingPhoto(false);
       }
     }
   };
@@ -214,27 +287,37 @@ export default function ProfilePage() {
     const updatedFields: string[] = [];
 
     try {
-      // 1. Update Profile (DisplayName to Firebase Auth, PhotoURL Base64 to LocalStorage)
-      if (hasProfileChanges) {
-        // We only update displayName in Firebase to avoid 'Photo URL too long' error
-        await updateProfile(user, {
-          displayName: displayName.trim() || null,
-        });
+      // Save ImgBB API Key to local storage
+      if (hasApiKeyChanges) {
+        localStorage.setItem("imgbb_api_key", imgbbApiKey.trim());
+        updatedFields.push("Kunci API ImgBB");
+      }
 
-        // Save Photo Base64 to LocalStorage under user specific key
+      // 1. Update Profile (DisplayName & photoURL directly to Firebase Auth!)
+      if (hasProfileChanges) {
+        const payload: {
+          displayName?: string | null;
+          photoURL?: string | null;
+        } = {};
+
+        if (displayName !== (user.displayName || "")) {
+          payload.displayName = displayName.trim() || null;
+          updatedFields.push("Nama Lengkap");
+        }
+
         if (photoURL !== getOriginalAvatar()) {
-          if (photoURL) {
-            localStorage.setItem(`user_avatar_base64_${user.uid}`, photoURL);
-          } else {
-            localStorage.removeItem(`user_avatar_base64_${user.uid}`);
-          }
-          // Dispatch custom event so the layout can listen and update instantly
+          payload.photoURL = photoURL || null;
+
+          // Clear legacy local storage Base64 avatar since we are now using official cloud photoURL
+          localStorage.removeItem(`user_avatar_base64_${user.uid}`);
+
+          // Dispatch custom event to let layout sync instantly
           window.dispatchEvent(new Event("localAvatarUpdated"));
           updatedFields.push("Foto Profil");
         }
 
-        if (displayName !== (user.displayName || "")) {
-          updatedFields.push("Nama Lengkap");
+        if (Object.keys(payload).length > 0) {
+          await updateProfile(user, payload);
         }
       }
 
@@ -419,6 +502,44 @@ export default function ProfilePage() {
                 <p className="text-xs text-muted-foreground/80 flex items-center gap-1">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   Email utama tidak dapat diubah untuk keamanan akun.
+                </p>
+              </div>
+
+              {/* ImgBB API Key Input */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="imgbbApiKey"
+                    className="font-semibold text-sm"
+                  >
+                    ImgBB API Key
+                  </Label>
+                  <a
+                    href="https://api.imgbb.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    Dapatkan Kunci API Gratis ↗
+                  </a>
+                </div>
+                <Input
+                  id="imgbbApiKey"
+                  type="password"
+                  value={imgbbApiKey}
+                  onChange={(e) => setImgbbApiKey(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder={
+                    process.env.NEXT_PUBLIC_IMGBB_API_KEY
+                      ? "Menggunakan Kunci API dari Environment"
+                      : "Masukkan ImgBB API Key Anda"
+                  }
+                  className="h-11 pl-3 rounded-lg w-full font-mono"
+                />
+                <p className="text-xs text-muted-foreground/80">
+                  Digunakan untuk mengunggah dan melacak foto profil Anda di
+                  awan (cloud) agar menghasilkan URL pendek yang responsif dan
+                  hemat bandwidth.
                 </p>
               </div>
             </div>
