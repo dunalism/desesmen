@@ -410,7 +410,16 @@ export default function ProfilePage() {
                     {displayName?.charAt(0) || user.email?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                {isEditing && (
+                {/* Loader overlay during upload */}
+                {isUploadingPhoto && (
+                  <div className="absolute inset-0 bg-black/60 text-white rounded-full flex flex-col items-center justify-center text-xs animate-fade-in z-10">
+                    <Loader2 className="h-5 w-5 animate-spin mb-1 text-primary" />
+                    <span className="font-semibold text-[10px]">
+                      Mengunggah...
+                    </span>
+                  </div>
+                )}
+                {isEditing && !isUploadingPhoto && (
                   <button
                     type="button"
                     onClick={handlePhotoUploadClick}
@@ -433,9 +442,17 @@ export default function ProfilePage() {
                       variant="outline"
                       size="sm"
                       onClick={handlePhotoUploadClick}
-                      className="rounded-lg text-xs"
+                      disabled={isUploadingPhoto}
+                      className="rounded-lg text-xs gap-1.5"
                     >
-                      Pilih Foto Baru
+                      {isUploadingPhoto ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Mengunggah...
+                        </>
+                      ) : (
+                        "Pilih Foto Baru"
+                      )}
                     </Button>
                     <input
                       type="file"
@@ -443,6 +460,7 @@ export default function ProfilePage() {
                       onChange={handlePhotoChange}
                       accept="image/*"
                       className="hidden"
+                      disabled={isUploadingPhoto}
                     />
                   </div>
                 )}
@@ -562,7 +580,7 @@ export default function ProfilePage() {
               type="button"
               variant="outline"
               onClick={handleCancelClick}
-              disabled={isLoading}
+              disabled={isLoading || isUploadingPhoto}
               className="h-11 w-full sm:w-auto font-semibold px-5 rounded-xl gap-2 order-2 sm:order-1"
             >
               <X className="h-4 w-4" />
@@ -570,7 +588,7 @@ export default function ProfilePage() {
             </Button>
             <Button
               type="submit"
-              disabled={!hasChanges || isLoading}
+              disabled={!hasChanges || isLoading || isUploadingPhoto}
               className="h-11 w-full sm:w-auto font-semibold px-6 rounded-xl gap-2 order-1 sm:order-2"
             >
               {isLoading ? (
