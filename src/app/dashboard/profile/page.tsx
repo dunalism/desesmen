@@ -215,7 +215,7 @@ export default function ProfilePage() {
           setPhotoURL(shortUrl);
           showAlert(
             "Foto Profil Diunggah",
-            "Foto berhasil diunggah ke cloud ImgBB. Klik 'Simpan Perubahan' di bawah untuk menerapkan.",
+            "Foto berhasil diunggah. Klik 'Simpan Perubahan' di bawah untuk menerapkan.",
           );
         } else {
           console.error("ImgBB error:", result);
