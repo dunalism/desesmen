@@ -133,7 +133,7 @@ export function ReviewStep({
               onClick={handleToggleSelectAll}
               variant={isAllSelected ? "outline" : "default"}
               size="sm"
-              className="w-full md:w-auto h-9 px-4 shrink-0 flex items-center justify-center gap-2 font-semibold shadow-sm transition-all"
+              className="w-full md:w-auto h-9 px-3 shrink-0 flex items-center justify-center gap-2 font-semibold"
             >
               {isAllSelected ? (
                 <>

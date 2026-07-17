@@ -342,7 +342,7 @@ export function AssessmentCard({
                 `/dashboard/assessment/${assessment.id}?source=bank-soal`,
               )
             }
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="h-8 px-2.5 flex items-center gap-1.5 text-xs font-semibold"
           >

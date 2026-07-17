@@ -135,15 +135,13 @@ export default function DashboardPage() {
               Buat Asesmen Kustom Baru dengan AI
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Ubah teks ringkasan materi pelajaran, kurikulum, atau gambar buku
-              paket dengan OCR pintar menjadi soal pilihan ganda, essay, atau
-              Uraian/Esai instan.
+              Ubah teks materi pelajaran, kurikulum, atau foto buku paket
+              menjadi soal pilihan ganda, benar/salah, menjodohkan atau esai.
             </p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/generate")}
-            size="lg"
-            className="flex items-center gap-2 font-bold px-6 h-12 shadow-md hover:shadow-lg transition-all"
+            className="h-10 font-semibold px-3 pl-2"
           >
             <Plus className="h-5 w-5" />
             <span>Mulai Buat Soal</span>
@@ -231,15 +229,15 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold tracking-tight flex items-center gap-2">
             <Brain className="h-5 w-5 text-primary" />
-            Riwayat Pembuatan Terakhir
+            Paket Soal
           </h3>
           {recentAssessments.length > 0 && (
             <Button
               onClick={() => router.push("/dashboard/bank-soal")}
-              variant="link"
-              className="text-primary p-0 h-auto font-semibold"
+              variant="outline"
+              className="text-primary  font-semibold"
             >
-              Lihat Semua Bank Soal ➔
+              Bank Soal ➔
             </Button>
           )}
         </div>

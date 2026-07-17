@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Loader2, Clipboard, AlertTriangle } from "lucide-react";
+import { Loader2, Clipboard, AlertTriangle, ClipboardList } from "lucide-react";
 import { useDialog } from "@/components/ui/dialog-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
@@ -188,19 +188,23 @@ export default function ExamsDashboardPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 bg-background text-foreground">
+    <div className="space-y-6 max-w-5xl mx-auto w-full">
       {/* HEADER SECTION */}
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Sesi Ujian</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Kelola ujian mandiri tangguh dengan infrastruktur server hemat
-            biaya.
-          </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2.5 rounded-lg text-primary">
+            <ClipboardList className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Sesi Ujian</h2>
+            <p className="text-sm text-muted-foreground">
+              Kelola ujian mandiri tangguh dengan analisis yang akurat.
+            </p>
+          </div>
         </div>
         <Button
+          className="h-9 font-semibold"
           onClick={() => setIsModalOpen(true)}
-          variant="default"
           size="lg"
         >
           + Buat Ujian Baru

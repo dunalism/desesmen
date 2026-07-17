@@ -218,7 +218,7 @@ export function InputStep({
           </p>
           <p className="text-xs text-muted-foreground max-w-md">
             Lewati pengunggahan materi pelajaran dan tulis butir soal Anda
-            sendiri satu per satu menggunakan editor TipTap.
+            sendiri satu per satu.
           </p>
           <Button
             type="button"

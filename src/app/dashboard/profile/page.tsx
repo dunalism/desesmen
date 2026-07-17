@@ -391,7 +391,7 @@ export default function ProfilePage() {
         {!isEditing && (
           <Button
             onClick={handleEditClick}
-            className="h-11 gap-2 font-semibold px-4 rounded-xl"
+            className="h-9 w-full sm:w-auto font-semibold px-4"
           >
             <Edit2 className="h-4 w-4" />
             Edit Profil
@@ -400,8 +400,8 @@ export default function ProfilePage() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        <Card className="rounded-xl overflow-hidden shadow-sm border border-border">
-          <CardHeader className="bg-muted/10">
+        <Card>
+          <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <UserRound className="h-5 w-5 text-primary" />
               Detail Profil
@@ -513,8 +513,8 @@ export default function ProfilePage() {
         </Card>
 
         {isEditing && (
-          <Card className="rounded-xl overflow-hidden shadow-sm border border-border">
-            <CardHeader className="bg-muted/10">
+          <Card>
+            <CardHeader>
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <KeyRound className="h-5 w-5 text-primary" />
                 Ganti Kata Sandi
@@ -591,7 +591,7 @@ export default function ProfilePage() {
               variant="outline"
               onClick={handleCancelClick}
               disabled={isLoading || isUploadingPhoto}
-              className="h-11 w-full sm:w-auto font-semibold px-5 rounded-xl gap-2 order-2 sm:order-1"
+              className="h-9 w-full sm:w-auto font-semibold px-5 gap-2 order-2 sm:order-1"
             >
               <X className="h-4 w-4" />
               Batal
@@ -599,7 +599,7 @@ export default function ProfilePage() {
             <Button
               type="submit"
               disabled={!hasChanges || isLoading || isUploadingPhoto}
-              className="h-11 w-full sm:w-auto font-semibold px-6 rounded-xl gap-2 order-1 sm:order-2"
+              className="h-9 w-full sm:w-auto font-semibold px-6 gap-2 order-1 sm:order-2"
             >
               {isLoading ? (
                 <>

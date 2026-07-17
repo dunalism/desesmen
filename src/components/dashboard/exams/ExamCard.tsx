@@ -215,7 +215,7 @@ export function ExamCard({
         </div>
       </CardContent>
 
-      <CardFooter className="pt-0 bg-transparent">
+      <CardFooter className="bg-transparent">
         <Button
           variant="secondary"
           className="w-full"

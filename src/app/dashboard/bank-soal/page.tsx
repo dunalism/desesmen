@@ -12,6 +12,7 @@ import {
   X,
   Filter,
   BookOpenCheck,
+  FileText,
 } from "lucide-react";
 import { useDialog } from "@/components/ui/dialog-provider";
 import { Button } from "@/components/ui/button";
@@ -180,7 +181,7 @@ export default function BankSoalPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2.5 rounded-lg text-primary">
-            <BookOpenCheck className="h-6 w-6" />
+            <FileText className="h-6 w-6" />
           </div>
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Bank Soal</h2>
@@ -191,7 +192,7 @@ export default function BankSoalPage() {
         </div>
         <Button
           onClick={() => router.push("/dashboard/generate")}
-          className="flex items-center gap-2"
+          className="h-9 pl-4 font-semibold"
         >
           <span>Buat Soal Baru</span>
           <ChevronRight className="h-4 w-4" />
