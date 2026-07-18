@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AlertDialogProvider } from "@/components/ui/dialog-provider";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,6 +34,7 @@ export default function RootLayout({
         >
           <AlertDialogProvider>{children}</AlertDialogProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
