@@ -108,8 +108,12 @@ export default function () {
   sleep(jitterSeconds);
 
   // Generate identitas siswa unik berbasis Virtual User (VU) & iterasi k6 untuk memintas proteksi Anti Double-Submit
-  const uniqueStudentId = `ID-${__VU}-${__ITER}`;
-  const uniqueStudentName = `Siswa Simulasi ${__VU} No ${__ITER}`;
+  // Kita tambahkan timestamp detik dinamis agar nama selalu unik di setiap running pengujian baru
+  const runTimestamp = Math.floor(Date.now() / 1000)
+    .toString()
+    .slice(-5);
+  const uniqueStudentId = `ID-${runTimestamp}-${__VU}-${__ITER}`;
+  const uniqueStudentName = `Siswa-${runTimestamp}-${__VU}-${__ITER}`;
 
   const startedAt = new Date();
   startedAt.setMinutes(startedAt.getMinutes() - 30); // Atur waktu mulai 30 menit yang lalu
