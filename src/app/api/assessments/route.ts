@@ -146,6 +146,7 @@ export async function POST(request: Request) {
       mixedTfCount,
       mixedSaCount,
       mixedMatchCount,
+      isManual,
     } = body;
 
     const targetOptionsCount = Number(optionsCount) === 5 ? 5 : 4;
@@ -155,6 +156,27 @@ export async function POST(request: Request) {
         { error: "Unauthorized. Missing userId." },
         { status: 401 },
       );
+    }
+
+    // Jika membuat paket soal secara manual, buat data kosong di MySQL
+    if (isManual) {
+      const assessment = await prisma.assessment.create({
+        data: {
+          userId,
+          title: title?.trim() || "Paket Soal Manual Baru",
+          inputType: "TEXT",
+          rawInputText: "Dibuat secara manual tanpa AI.",
+          imageUrl: "",
+          questionType: questionType || "MULTIPLE_CHOICE",
+          questionCount: 0,
+          difficulty: difficulty || "MEDIUM",
+          questions: {
+            create: [],
+          },
+        },
+      });
+
+      return NextResponse.json({ success: true, id: assessment.id });
     }
 
     if (!rawInputText || rawInputText.trim().length < 10) {

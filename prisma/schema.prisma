@@ -43,6 +43,7 @@ model Assessment {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   questions     Question[]
+  exams         Exam[]
 
   @@map("assessments")
 }
@@ -69,22 +70,23 @@ enum Difficulty {
 
 // 3. Model Soal
 model Question {
-  id           String     @id @default(uuid())
-  assessmentId String
-  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  id             String          @id @default(uuid())
+  assessmentId   String
+  assessment     Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   
-  questionText String     @db.Text
-  type         QuestionType
-  order        Int        // Urutan soal
+  questionText   String          @db.Text
+  type           QuestionType
+  order          Int             // Urutan soal
   
   // Relasi ke pilihan jawaban (untuk pilihan ganda)
-  options      Option[]
+  options        Option[]
   
   // Kunci jawaban (terutama untuk Uraian/Esai atau Benar/Salah)
-  answerKey    String     @db.Text 
+  answerKey      String          @db.Text 
 
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  studentAnswers StudentAnswer[]
 
   @@map("questions")
 }
@@ -106,4 +108,68 @@ model Option {
   isCorrect  Boolean  @default(false)
 
   @@map("options")
+}
+
+// 5. Model Sesi Ujian (Exam) - Dibuat oleh Guru
+model Exam {
+  id              String        @id @default(uuid())
+  assessmentId    String
+  assessment      Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  title           String        @db.VarChar(255) // Nama/Judul sesi ujian (misal: "Ujian Harian Matematika")
+  token           String        @unique @db.VarChar(50) // Kode ujian unik untuk diakses siswa
+  duration        Int           // Durasi pengerjaan dalam menit
+  startTime       DateTime      // Waktu mulai pengerjaan boleh diakses
+  endTime         DateTime      // Waktu selesai pengerjaan ditutup
+  isActive        Boolean       @default(true)
+  showLeaderboard Boolean       @default(true) // Toggle visibilitas peringkat secara publik
+  shuffleQuestions Boolean      @default(false) // Guru memilih apakah soal diacak per siswa
+  shuffleOptions   Boolean      @default(false) // Guru memilih apakah opsi pilihan ganda diacak per siswa
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  attempts        ExamAttempt[]
+
+  @@map("exams")
+}
+
+// 6. Model Usaha Ujian Siswa (ExamAttempt) - Lembar Jawaban Siswa
+model ExamAttempt {
+  id          String          @id @default(uuid())
+  examId      String
+  exam        Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  studentName String          @db.VarChar(255) // Nama lengkap siswa
+  studentId   String?         @db.VarChar(100) // Nomor absen atau NISN siswa (opsional)
+  durationSeconds Int     
+  startedAt   DateTime        @default(now()) // Kapan siswa mulai membuka soal
+  submittedAt DateTime?       // Kapan lembar jawaban sukses dikirim ke server
+
+  score       Float?          // Hasil penilaian (skor 0 - 100)
+  isGraded    Boolean         @default(false) // Apakah pengerjaan sudah dinilai secara sistem
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  answers     StudentAnswer[]
+
+  @@map("exam_attempts")
+}
+
+// 7. Model Detail Jawaban Siswa (StudentAnswer) - Jawaban per Butir Soal
+model StudentAnswer {
+  id             String      @id @default(uuid())
+  attemptId      String
+  attempt        ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId     String
+  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Jawaban yang dipilih/ditulis siswa
+  chosenOptionId String?     @db.VarChar(255) // Menyimpan ID Option yang dipilih siswa (untuk MULTIPLE_CHOICE)
+  textAnswer     String?     @db.Text         // Menyimpan teks jawaban untuk TRUE_FALSE, SHORT_ANSWER, MATCHING
+
+  isCorrect      Boolean?    // Hasil penilaian benar/salah untuk butir soal ini (diisi oleh server)
+  createdAt      DateTime    @default(now())
+
+  @@map("student_answers")
 }

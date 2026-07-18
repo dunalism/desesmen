@@ -26,6 +26,10 @@ import {
 
 import { Question as DetailedQuestion, Assessment } from "@/lib/types";
 
+const stripHtml = (html: string) => {
+  return html ? html.replace(/<[^>]*>/g, "") : "";
+};
+
 interface AssessmentCardProps {
   assessment: Assessment;
   debouncedSearch: string;
@@ -199,7 +203,7 @@ export function AssessmentCard({
                     key={q.id}
                     className="line-clamp-2 pl-1 text-[11px] leading-relaxed"
                   >
-                    &quot;{q.questionText}&quot;
+                    {`"${stripHtml(q.questionText)}"`}
                   </li>
                 ))}
               </ul>
@@ -289,10 +293,15 @@ export function AssessmentCard({
                           <Square className="h-4 w-4 text-muted-foreground/80" />
                         )}
                       </button>
-                      <span className="text-[11px] leading-relaxed font-medium text-foreground">
-                        <strong className="text-primary">{idx + 1}.</strong>{" "}
-                        {q.questionText}
-                      </span>
+                      <div className="text-[11px] leading-relaxed font-medium text-foreground flex items-start gap-1">
+                        <strong className="text-primary shrink-0">
+                          {idx + 1}.
+                        </strong>
+                        <div
+                          className="prose prose-sm dark:prose-invert max-w-none inline-block"
+                          dangerouslySetInnerHTML={{ __html: q.questionText }}
+                        />
+                      </div>
                     </div>
                   );
                 })}
@@ -333,7 +342,7 @@ export function AssessmentCard({
                 `/dashboard/assessment/${assessment.id}?source=bank-soal`,
               )
             }
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="h-8 px-2.5 flex items-center gap-1.5 text-xs font-semibold"
           >

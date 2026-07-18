@@ -10,6 +10,7 @@ export interface Question {
   type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "MATCHING";
   options: Option[];
   answerKey: string;
+  order: number;
 }
 
 export interface MatchingQuestion {
@@ -62,5 +63,35 @@ export interface StatsData {
     EASY: number;
     MEDIUM: number;
     HARD: number;
+  };
+}
+
+export interface AssessmentOption {
+  _count?: {
+    questions: number;
+  };
+  id: string;
+  title: string | null;
+  questionType: string;
+}
+export interface ExamItem {
+  id: string;
+  assessmentId: string;
+  title: string;
+  token: string;
+  duration: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  showLeaderboard: boolean;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  assessment: {
+    title: string | null;
+    questionCount: number;
+    questionType: string;
+  };
+  _count: {
+    attempts: number;
   };
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
-  Loader2,
   Brain,
   Sparkles,
   Layers,
@@ -18,6 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AssessmentCard } from "@/components/dashboard/AssessmentCard";
 import { Assessment, StatsData } from "@/lib/types";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+
+interface DashboardStatsResponse {
+  success: boolean;
+  stats: StatsData;
+  recentAssessments: Assessment[];
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -26,29 +34,15 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
 
-  const [stats, setStats] = useState<StatsData | null>(null);
-  const [recentAssessments, setRecentAssessments] = useState<Assessment[]>([]);
+  // SWR Caching Client-Side for Dashboard
+  const { data, isLoading, mutate } = useSWR<DashboardStatsResponse>(
+    userId ? `/api/dashboard/stats?userId=${userId}` : null,
+    fetcher,
+  );
 
-  const fetchDashboardData = useCallback(async (uid: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/dashboard/stats?userId=${uid}`);
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setStats(data.stats);
-        setRecentAssessments(data.recentAssessments);
-      } else {
-        console.error("Gagal mengambil data statistik dashboard:", data.error);
-      }
-    } catch (error) {
-      console.error("Fetch dashboard stats error:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const stats = data?.stats || null;
+  const recentAssessments: Assessment[] = data?.recentAssessments || [];
 
   // Monitor auth status and fetch stats
   useEffect(() => {
@@ -56,7 +50,6 @@ export default function DashboardPage() {
       if (currentUser) {
         setUserId(currentUser.uid);
         setUserName(currentUser.displayName || currentUser.email);
-        fetchDashboardData(currentUser.uid);
       } else {
         router.push("/login");
       }
@@ -64,7 +57,7 @@ export default function DashboardPage() {
     });
 
     return () => unsubscribe();
-  }, [fetchDashboardData, router]);
+  }, [router]);
 
   // Handle deletion of an assessment from the recent list
   const handleDeleteAssessment = async (id: string) => {
@@ -78,11 +71,24 @@ export default function DashboardPage() {
           });
 
           if (response.ok) {
-            setRecentAssessments((prev) =>
-              prev.filter((item) => item.id !== id),
-            );
-            // Re-fetch aggregate stats to keep metrics accurate after deletion
-            if (userId) fetchDashboardData(userId);
+            if (data) {
+              mutate(
+                {
+                  ...data,
+                  recentAssessments: data.recentAssessments.filter(
+                    (item: Assessment) => item.id !== id,
+                  ),
+                  stats: {
+                    ...data.stats,
+                    totalAssessments: Math.max(
+                      0,
+                      data.stats.totalAssessments - 1,
+                    ),
+                  },
+                },
+                false,
+              );
+            }
             showAlert("Sukses", "Paket soal berhasil dihapus!");
           } else {
             const data = await response.json();
@@ -99,17 +105,11 @@ export default function DashboardPage() {
     );
   };
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm font-semibold text-muted-foreground">
-          Memuat Dashboard Anda...
-        </p>
-      </div>
-    );
+  if (authLoading || (isLoading && !data)) {
+    return <DashboardSkeleton />;
   }
 
+  // DATA STATE (RENDER ASLI)
   return (
     <div className="space-y-8 max-w-5xl mx-auto w-full">
       {/* Welcome & Greeting Section */}
@@ -135,15 +135,13 @@ export default function DashboardPage() {
               Buat Asesmen Kustom Baru dengan AI
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Ubah teks ringkasan materi pelajaran, kurikulum, atau gambar buku
-              paket dengan OCR pintar menjadi soal pilihan ganda, essay, atau
-              Uraian/Esai instan.
+              Ubah teks materi pelajaran, kurikulum, atau foto buku paket
+              menjadi soal pilihan ganda, benar/salah, menjodohkan atau esai.
             </p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/generate")}
-            size="lg"
-            className="flex items-center gap-2 font-bold px-6 h-12 shadow-md hover:shadow-lg transition-all"
+            className="h-10 font-semibold px-3 pl-2"
           >
             <Plus className="h-5 w-5" />
             <span>Mulai Buat Soal</span>
@@ -231,15 +229,15 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold tracking-tight flex items-center gap-2">
             <Brain className="h-5 w-5 text-primary" />
-            Riwayat Pembuatan Terakhir
+            Paket Soal
           </h3>
           {recentAssessments.length > 0 && (
             <Button
               onClick={() => router.push("/dashboard/bank-soal")}
-              variant="link"
-              className="text-primary p-0 h-auto font-semibold"
+              variant="outline"
+              className="text-primary  font-semibold"
             >
-              Lihat Semua Bank Soal ➔
+              Bank Soal ➔
             </Button>
           )}
         </div>
@@ -263,7 +261,7 @@ export default function DashboardPage() {
               <AssessmentCard
                 key={assessment.id}
                 assessment={assessment}
-                debouncedSearch="" // No active keyword search on home dashboard
+                debouncedSearch=""
                 onDelete={handleDeleteAssessment}
               />
             ))}

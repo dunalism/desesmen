@@ -1,4 +1,4 @@
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaTiDBCloud } from "@tidbcloud/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import "dotenv/config";
 
@@ -7,22 +7,15 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const adapter = new PrismaMariaDb({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT as unknown as number,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  connectionLimit: 4, // Mencegah error max_user_connections melebihi limit server (5)
-
-  allowPublicKeyRetrieval: true,
+// Adapter khusus TiDB Cloud
+const adapter = new PrismaTiDBCloud({
+  url: process.env.DATABASE_URL, // pastikan sudah ada ?sslaccept=strict di URL
 });
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    // Menampilkan log query di terminal saat mode development (opsional, sangat membantu untuk debugging)
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]

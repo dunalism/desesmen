@@ -148,10 +148,7 @@ export default function AssessmentReviewPage({
       }
 
       setInitialQuestions(JSON.parse(JSON.stringify(questions))); // Reset state perubahan
-      showAlert(
-        "Sukses",
-        "Perubahan berhasil disimpan ke Bank Soal database MySQL!",
-      );
+      showAlert("Sukses", "Perubahan berhasil disimpan ke Bank Soal database");
     } catch (error) {
       const err = error as Error;
       console.error("Save error:", err);

@@ -5,10 +5,27 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Loader2, LogOut, BookOpen } from "lucide-react";
+import {
+  Loader2,
+  LogOut,
+  Menu,
+  Home,
+  FileText,
+  ClipboardList,
+  Trophy,
+  ClipboardCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { CartProvider } from "@/lib/cart-context";
 import { FloatingCartBar } from "@/components/dashboard/FloatingCartBar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function DashboardLayout({
   children,
@@ -19,20 +36,55 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Monitor scroll for hiding/showing navbar
+  // Watch for local avatar updates (e.g. from profile page)
+  useEffect(() => {
+    const getInitialAvatar = () => {
+      if (user) {
+        const stored = localStorage.getItem(`user_avatar_base64_${user.uid}`);
+        setLocalAvatar(stored);
+      } else {
+        setLocalAvatar(null);
+      }
+    };
+    getInitialAvatar();
+  }, [user]);
+
+  // Handle custom events or storage events to sync avatar across layout immediately
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      if (user) {
+        const stored = localStorage.getItem(`user_avatar_base64_${user.uid}`);
+        setLocalAvatar(stored);
+      }
+    };
+    window.addEventListener("localAvatarUpdated", handleAvatarUpdate);
+    window.addEventListener("storage", handleAvatarUpdate);
+    return () => {
+      window.removeEventListener("localAvatarUpdated", handleAvatarUpdate);
+      window.removeEventListener("storage", handleAvatarUpdate);
+    };
+  }, [user]);
+
+  const navigationItems = [
+    { href: "/dashboard", label: "Beranda", icon: Home },
+    { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText },
+    { href: "/dashboard/exams", label: "Ujian", icon: ClipboardList },
+    { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  ];
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-
       if (currentScrollY > lastScrollY && currentScrollY > 80) {
-        setShowHeader(false); // Sembunyikan saat scroll ke bawah
+        setShowHeader(false);
       } else if (currentScrollY < lastScrollY) {
-        setShowHeader(true); // Tampilkan saat scroll ke atas
+        setShowHeader(true);
       }
-
       setLastScrollY(currentScrollY);
     };
 
@@ -43,7 +95,6 @@ export default function DashboardLayout({
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
-        // Redirect to login if not authenticated
         router.push("/login");
       } else {
         setUser(currentUser);
@@ -76,77 +127,175 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user) {
-    return null; // Will redirect via useEffect
-  }
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Dashboard Navbar */}
+      {/* GLOBAL NAVBAR */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 bg-card/95 backdrop-blur-sm border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm ${
           showHeader ? "translate-y-0" : "-translate-y-full"
         }`}
       >
         <div className="flex items-center gap-3 sm:gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          {/* LOGO APLIKASI */}
+          <Link href="/" className="flex items-center gap-2">
             <div className="bg-primary/10 p-2 rounded-lg text-primary">
-              <BookOpen className="h-6 w-6" />
+              <ClipboardCheck className="h-6 w-6" />
             </div>
-            <div className="hidden xs:block">
-              <h1 className="text-lg font-bold tracking-tight">
-                SoalGenerator
+            <div>
+              <h1 className="text-sm sm:text-lg font-bold tracking-tight leading-none md:leading-tight">
+                Epalio
               </h1>
-              <p className="text-[10px] text-muted-foreground">
-                Pembuat Asesmen Pintar
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:block">
+                Smart Assessment
               </p>
             </div>
           </Link>
 
-          <nav className="flex items-center gap-1 border-l pl-3 sm:pl-6 h-8">
-            <Link
-              href="/dashboard"
-              className={`px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${
-                pathname === "/dashboard"
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              Beranda
-            </Link>
-            <Link
-              href="/dashboard/bank-soal"
-              className={`px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${
-                pathname === "/dashboard/bank-soal"
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              Bank Soal
-            </Link>
+          {/* DESKTOP NAVIGATION (Layar Lebar) */}
+          <nav className="hidden md:flex items-center gap-1 border-l pl-6 h-8">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${
+                  pathname === item.href
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </div>
 
+        {/* KANAN NAVBAR: PROFIL DESKTOP & MOBILE MENU TRIGGER */}
         <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold">
-              {user.displayName || "Guru"}
-            </p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-          </div>
+          <Link
+            href="/dashboard/profile"
+            className="items-center space-x-2 text-right hidden md:flex hover:opacity-80 transition-opacity"
+          >
+            <Avatar>
+              <AvatarImage
+                src={localAvatar || user.photoURL || ""}
+                alt={user.displayName! || user.email!}
+              />
+              <AvatarFallback>
+                {user.displayName?.charAt(0) || user.email!.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <p className="text-sm font-semibold">
+                {user.displayName || "Guru"}
+              </p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          </Link>
           <Button
             onClick={handleLogout}
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-destructive flex items-center gap-2"
+            className="text-muted-foreground hover:text-destructive hidden md:flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Keluar</span>
+            <span>Keluar</span>
           </Button>
+
+          {/* MOBILE SIDEBAR TRIGGER  */}
+          <div className="md:hidden">
+            <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
+                >
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-[280px] sm:w-[320px] p-6 flex flex-col justify-between"
+              >
+                <div className="space-y-6">
+                  <SheetHeader className="text-left">
+                    <SheetTitle className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                        <ClipboardCheck className="h-5 w-5" />
+                      </div>
+                      <span className="font-bold tracking-tight text-base">
+                        Epalio
+                      </span>
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  {/* Menu Navigasi Mobile */}
+                  <nav className="flex flex-col gap-2">
+                    {navigationItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = pathname === item.href;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                {/* Info Profil & Logout Mobile */}
+                <div className="border-t pt-4 space-y-4">
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="px-2 text-right flex gap-2 hover:bg-muted p-2 rounded-xl transition-colors"
+                  >
+                    <Avatar>
+                      <AvatarImage
+                        src={localAvatar || user.photoURL || ""}
+                        alt={user.displayName! || user.email!}
+                      />
+                      <AvatarFallback>
+                        {user.displayName?.charAt(0) || user.email!.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold">
+                        {user.displayName || "Guru"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </Link>
+                  <Button
+                    onClick={handleLogout}
+                    variant="destructive"
+                    className="w-full justify-center gap-2 font-bold rounded-xl"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Keluar
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
 
-      {/* Dashboard Content */}
+      {/* DASHBOARD CONTENT CONTAINER */}
       <CartProvider>
         <main className="flex-1 flex flex-col container max-w-7xl mx-auto pt-24 pb-24 px-4 sm:px-6 lg:px-8">
           {children}

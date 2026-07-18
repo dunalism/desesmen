@@ -41,6 +41,7 @@ interface ConfigStepProps {
   mixedMatchCount: number;
   setMixedMatchCount: (count: number) => void;
   autoDistribute: () => void;
+  isManualMode?: boolean;
 }
 
 export function ConfigStep({
@@ -65,6 +66,7 @@ export function ConfigStep({
   mixedMatchCount,
   setMixedMatchCount,
   autoDistribute,
+  isManualMode = false,
 }: ConfigStepProps) {
   const totalDistributed =
     mixedMcCount + mixedTfCount + mixedSaCount + mixedMatchCount;
@@ -146,39 +148,41 @@ export function ConfigStep({
           </div>
         )}
 
-        {/* Jumlah Soal */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground block">
-            Jumlah Soal
-          </label>
-          <div className="grid grid-cols-4 gap-4">
-            {[10, 20, 50].map((num) => (
-              <Button
-                key={num}
-                type="button"
-                onClick={() => setQuestionCount(num)}
-                variant={questionCount === num ? "default" : "outline"}
-                className="h-10 font-medium"
-              >
-                {num} Soal
-              </Button>
-            ))}
-            <div className="relative col-span-1">
-              <Input
-                type="number"
-                min={1}
-                max={100}
-                value={questionCount}
-                onChange={(e) => setQuestionCount(Number(e.target.value))}
-                className="h-10 text-center pr-2 font-medium"
-                placeholder="Lainnya"
-              />
+        {/* Jumlah Soal - Hanya ditampilkan jika bukan mode manual */}
+        {!isManualMode && (
+          <div className="space-y-2 animate-fade-in">
+            <label className="text-sm font-semibold text-foreground block">
+              Jumlah Soal
+            </label>
+            <div className="grid grid-cols-4 gap-4">
+              {[10, 20, 50].map((num) => (
+                <Button
+                  key={num}
+                  type="button"
+                  onClick={() => setQuestionCount(num)}
+                  variant={questionCount === num ? "default" : "outline"}
+                  className="h-10 font-medium"
+                >
+                  {num} Soal
+                </Button>
+              ))}
+              <div className="relative col-span-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={questionCount}
+                  onChange={(e) => setQuestionCount(Number(e.target.value))}
+                  className="h-10 text-center pr-2 font-medium"
+                  placeholder="Lainnya"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Distribusi Campuran (Hanya muncul jika Tipe Soal === MIXED) */}
-        {questionType === "MIXED" && (
+        {/* Distribusi Campuran (Hanya muncul jika Tipe Soal === MIXED dan bukan mode manual) */}
+        {!isManualMode && questionType === "MIXED" && (
           <div className="space-y-4 p-4 border rounded-lg bg-muted/20 animate-fade-in">
             <div className="flex justify-between items-center">
               <div>
@@ -423,11 +427,13 @@ export function ConfigStep({
 
         <Button
           onClick={onGenerate}
-          disabled={questionType === "MIXED" && !isBalanced}
+          disabled={!isManualMode && questionType === "MIXED" && !isBalanced}
           className="h-11 px-6 font-bold flex items-center gap-2 shadow-md bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
         >
           <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
-          <span>Buat Soal Sekarang</span>
+          <span>
+            {isManualMode ? "Buat Paket Ujian Manual" : "Buat Soal Sekarang"}
+          </span>
         </Button>
       </CardFooter>
     </Card>

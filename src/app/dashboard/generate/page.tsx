@@ -14,6 +14,7 @@ export default function DashboardGeneratePage() {
   const { showAlert } = useDialog();
   const [step, setStep] = useState<"INPUT" | "CONFIG">("INPUT");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isManual, setIsManual] = useState(false);
   const [loadingText, setLoadingText] = useState("Menyusun Soal dengan AI...");
 
   // State Step 1: Input Materi
@@ -168,10 +169,14 @@ export default function DashboardGeneratePage() {
         }
       }
 
-      setLoadingText("Menyusun Soal kustom dengan AI...");
+      if (isManual) {
+        setLoadingText("Membuat Paket Ujian Manual...");
+      } else {
+        setLoadingText("Menyusun Soal kustom dengan AI...");
+      }
 
-      // Validate mixed counts sum equals total count if type is MIXED
-      if (questionType === "MIXED") {
+      // Validate mixed counts sum equals total count if type is MIXED (hanya jika AI)
+      if (!isManual && questionType === "MIXED") {
         const sum =
           mixedMcCount + mixedTfCount + mixedSaCount + mixedMatchCount;
         if (sum !== questionCount) {
@@ -193,17 +198,18 @@ export default function DashboardGeneratePage() {
         body: JSON.stringify({
           userId: currentUser.uid,
           inputType,
-          rawInputText: finalInputText,
+          rawInputText: isManual ? "Pembuatan manual." : finalInputText,
           imageUrl: "",
           questionType,
-          questionCount,
+          questionCount: isManual ? 0 : questionCount,
           difficulty,
           title: title.trim(),
           optionsCount,
-          mixedMcCount,
-          mixedTfCount,
-          mixedSaCount,
-          mixedMatchCount,
+          mixedMcCount: isManual ? 0 : mixedMcCount,
+          mixedTfCount: isManual ? 0 : mixedTfCount,
+          mixedSaCount: isManual ? 0 : mixedSaCount,
+          mixedMatchCount: isManual ? 0 : mixedMatchCount,
+          isManual,
         }),
       });
 
@@ -236,7 +242,7 @@ export default function DashboardGeneratePage() {
           <p className="font-bold text-lg">{loadingText}</p>
           <p className="text-sm text-muted-foreground">
             Sistem sedang bekerja memproses materi dan merumuskan soal kustom di
-            database MySQL.
+            database.
           </p>
         </div>
       </div>
@@ -257,7 +263,14 @@ export default function DashboardGeneratePage() {
           setSelectedFile={setSelectedFile}
           imagePreview={imagePreview}
           setImagePreview={setImagePreview}
-          onNext={() => setStep("CONFIG")}
+          onNext={() => {
+            setIsManual(false);
+            setStep("CONFIG");
+          }}
+          onStartManual={() => {
+            setIsManual(true);
+            setStep("CONFIG");
+          }}
         />
       )}
 
@@ -273,7 +286,10 @@ export default function DashboardGeneratePage() {
           setTitle={setTitle}
           optionsCount={optionsCount}
           setOptionsCount={setOptionsCount}
-          onBack={() => setStep("INPUT")}
+          onBack={() => {
+            setStep("INPUT");
+          }}
+          isManualMode={isManual}
           onGenerate={handleGenerateQuestions}
           mixedMcCount={mixedMcCount}
           setMixedMcCount={setMixedMcCount}

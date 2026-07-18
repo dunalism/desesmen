@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { QuestionCard } from "./QuestionCard";
 import {
   ArrowLeft,
   Save,
@@ -10,11 +9,15 @@ import {
   Download,
   CheckSquare,
   Square,
+  Plus,
 } from "lucide-react";
 import { useDialog } from "@/components/ui/dialog-provider";
 import { useCart, CartItem } from "@/lib/cart-context";
 import { downloadAsWord, openPrintLayout } from "@/lib/export-utils";
 import { Question } from "@/lib/types";
+import { useState } from "react";
+import { InlineQuestionEditor } from "@/components/dashboard/InlineQuestionEditor";
+import { QuestionCard } from "@/components/dashboard/QuestionCard";
 
 interface ReviewStepProps {
   questions: Question[];
@@ -44,6 +47,8 @@ export function ReviewStep({
   const { showAlert } = useDialog();
   const { isSelected, toggleQuestion, addQuestionsBulk, removeQuestionsBulk } =
     useCart();
+
+  const [isAdding, setIsAdding] = useState(false);
 
   // Cek apakah semua soal aktif sudah terpilih di keranjang
   const isAllSelected =
@@ -128,7 +133,7 @@ export function ReviewStep({
               onClick={handleToggleSelectAll}
               variant={isAllSelected ? "outline" : "default"}
               size="sm"
-              className="w-full md:w-auto h-9 px-4 shrink-0 flex items-center justify-center gap-2 font-semibold shadow-sm transition-all"
+              className="w-full md:w-auto h-9 px-3 shrink-0 flex items-center justify-center gap-2 font-semibold"
             >
               {isAllSelected ? (
                 <>
@@ -148,41 +153,82 @@ export function ReviewStep({
 
       {/* Questions list */}
       <div className="space-y-4">
-        {questions.length === 0 ? (
-          <Card className="border-dashed py-12 text-center text-muted-foreground">
-            <p className="text-sm font-medium">
-              Belum ada soal tersedia. Silakan tambah soal baru.
-            </p>
-          </Card>
-        ) : (
-          questions.map((q, idx) => {
-            const cartItem: CartItem = {
-              id: q.id,
-              questionText: q.questionText,
-              type: q.type,
-              options: q.options.map((opt) => ({
-                id: opt.id,
-                optionText: opt.optionText,
-                isCorrect: opt.isCorrect,
-              })),
-              answerKey: q.answerKey,
-              assessmentId: "", // Will be filled dynamically if needed, or left empty
-              assessmentTextSnippet: `Paket ${questionType} - ${difficulty}`,
-            };
+        {questions.length === 0
+          ? !isAdding && (
+              <Card className="border-dashed py-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-4 bg-muted/5 border-primary/20">
+                <div className="rounded-full bg-primary/10 p-4 text-primary">
+                  <FileText className="h-8 w-8" />
+                </div>
+                <div className="space-y-1 max-w-sm">
+                  <p className="text-sm font-bold text-foreground">
+                    Paket soal ini masih kosong.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Silakan buat soal pertama Anda dengan menggunakan tombol di
+                    bawah!
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setIsAdding(true)}
+                  className="mt-2 font-bold shadow-sm cursor-pointer"
+                  size="sm"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Soal Pertama
+                </Button>
+              </Card>
+            )
+          : questions.map((q, idx) => {
+              const cartItem: CartItem = {
+                id: q.id,
+                questionText: q.questionText,
+                type: q.type,
+                options: q.options.map((opt) => ({
+                  id: opt.id,
+                  optionText: opt.optionText,
+                  isCorrect: opt.isCorrect,
+                })),
+                answerKey: q.answerKey,
+                assessmentId: "", // Will be filled dynamically if needed, or left empty
+                assessmentTextSnippet: `Paket ${questionType} - ${difficulty}`,
+              };
 
-            return (
-              <QuestionCard
-                key={q.id}
-                question={q}
-                index={idx}
-                onUpdate={handleUpdateQuestion}
-                onDelete={handleDeleteQuestion}
-                showCheckbox={true}
-                checked={isSelected(q.id)}
-                onCheckedChange={() => toggleQuestion(cartItem)}
-              />
-            );
-          })
+              return (
+                <QuestionCard
+                  key={q.id}
+                  question={q}
+                  index={idx}
+                  onUpdate={handleUpdateQuestion}
+                  onDelete={handleDeleteQuestion}
+                  showCheckbox={true}
+                  checked={isSelected(q.id)}
+                  onCheckedChange={() => toggleQuestion(cartItem)}
+                />
+              );
+            })}
+
+        {isAdding && (
+          <InlineQuestionEditor
+            allowedType={questionType}
+            onSave={(newQuestion) => {
+              setQuestions((prev) => [...prev, newQuestion]);
+              setIsAdding(false);
+            }}
+            onCancel={() => setIsAdding(false)}
+          />
+        )}
+
+        {!isAdding && questions.length > 0 && (
+          <div className="flex justify-center pt-2 animate-fade-in">
+            <Button
+              onClick={() => setIsAdding(true)}
+              variant="outline"
+              className="w-full max-w-xs h-10 border-dashed border-primary/30 hover:border-primary/60 text-primary hover:bg-primary/5 flex items-center justify-center gap-2 font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tambah Soal Baru secara Manual</span>
+            </Button>
+          </div>
         )}
       </div>
 

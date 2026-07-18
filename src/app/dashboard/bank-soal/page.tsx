@@ -6,12 +6,13 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
   Loader2,
-  BookOpen,
   AlertCircle,
   ChevronRight,
   Search,
   X,
   Filter,
+  BookOpenCheck,
+  FileText,
 } from "lucide-react";
 import { useDialog } from "@/components/ui/dialog-provider";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { AssessmentCard } from "@/components/dashboard/AssessmentCard";
 import { Assessment } from "@/lib/types";
 import useSWRInfinite from "swr/infinite";
 import { fetcher } from "@/lib/fetcher";
+import { AssessmentCardSkeleton } from "@/components/dashboard/AssessmentCardSkeleton";
 
 export default function BankSoalPage() {
   const router = useRouter();
@@ -69,7 +71,7 @@ export default function BankSoalPage() {
     return `/api/assessments?${queryParams.toString()}`;
   };
 
-  const { data, error, size, setSize, isValidating, isLoading, mutate } =
+  const { data, size, setSize, isValidating, isLoading, mutate } =
     useSWRInfinite(getKey, fetcher);
 
   const assessments: Assessment[] = data
@@ -179,19 +181,18 @@ export default function BankSoalPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2.5 rounded-lg text-primary">
-            <BookOpen className="h-6 w-6" />
+            <FileText className="h-6 w-6" />
           </div>
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Bank Soal</h2>
             <p className="text-sm text-muted-foreground">
-              Daftar Paket Soal terstruktur yang telah Anda buat menggunakan
-              asisten AI.
+              Daftar Paket Soal yang telah Anda buat.
             </p>
           </div>
         </div>
         <Button
           onClick={() => router.push("/dashboard/generate")}
-          className="flex items-center gap-2"
+          className="h-9 pl-4 font-semibold"
         >
           <span>Buat Soal Baru</span>
           <ChevronRight className="h-4 w-4" />
@@ -266,14 +267,13 @@ export default function BankSoalPage() {
           )}
         </div>
       </div>
-
       {/* Grid of assessments */}
       {loading && assessments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-xs font-semibold text-muted-foreground">
-            Menyaring Paket Soal Anda...
-          </p>
+        /* SKELETON STATE: Membuka container grid dan merender 6 buah skeleton card tiruan */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <AssessmentCardSkeleton key={i} />
+          ))}
         </div>
       ) : assessments.length === 0 ? (
         <div className="border border-dashed rounded-xl py-16 px-4 text-center space-y-4 bg-muted/10">
@@ -298,7 +298,7 @@ export default function BankSoalPage() {
             </Button>
           ) : (
             <Button
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/dashboard/generate")}
               variant="outline"
               className="mt-2"
             >
@@ -307,6 +307,7 @@ export default function BankSoalPage() {
           )}
         </div>
       ) : (
+        /* DATA STATE: Tampilan asli ketika data sukses ter-fetch */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {assessments.map((assessment) => (
             <AssessmentCard

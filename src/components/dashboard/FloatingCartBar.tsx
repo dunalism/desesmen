@@ -70,10 +70,12 @@ export function FloatingCartBar() {
         );
         router.push(`/dashboard/assessment/${data.id}?source=bank-soal`);
       } else {
+        setShowCompileModal(false);
         showAlert("Gagal", data.error || "Gagal mengompilasi paket baru.");
       }
     } catch (error) {
       console.error("Compile error:", error);
+      setShowCompileModal(false);
       showAlert("Error", "Terjadi kesalahan saat mengompilasi paket baru.");
     } finally {
       setIsCompiling(false);

@@ -31,6 +31,7 @@ interface InputStepProps {
   imagePreview: string | null;
   setImagePreview: (preview: string | null) => void;
   onNext: () => void;
+  onStartManual: () => void;
 }
 
 export function InputStep({
@@ -43,6 +44,7 @@ export function InputStep({
   imagePreview,
   setImagePreview,
   onNext,
+  onStartManual,
 }: InputStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { showAlert } = useDialog();
@@ -201,6 +203,32 @@ export function InputStep({
             />
           </div>
         )}
+
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink mx-4 text-xs font-semibold uppercase text-muted-foreground select-none">
+            Atau
+          </span>
+          <div className="flex-grow border-t border-border"></div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center p-6 border border-dashed border-primary/20 bg-primary/[0.01] rounded-xl text-center space-y-2">
+          <p className="text-sm font-semibold text-foreground">
+            Buat Paket Soal secara Manual dari Awal
+          </p>
+          <p className="text-xs text-muted-foreground max-w-md">
+            Lewati pengunggahan materi pelajaran dan tulis butir soal Anda
+            sendiri satu per satu.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onStartManual}
+            className="text-xs font-semibold h-9 px-4 border-primary/30 text-primary hover:bg-primary/5 mt-1"
+          >
+            Mulai Buat Manual
+          </Button>
+        </div>
       </CardContent>
 
       <CardFooter className="flex items-center justify-between border-t border-border pt-6 pb-6 bg-muted/10">

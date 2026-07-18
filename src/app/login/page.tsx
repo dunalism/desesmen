@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup, onAuthStateChanged } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import Link from "next/link";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import {
   Card,
   CardHeader,
@@ -13,17 +15,17 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, KeyRound } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, KeyRound, Mail, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successUser, setSuccessUser] = useState<{
-    name?: string | null;
-    email: string;
-  } | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -38,55 +40,62 @@ export default function LoginPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleGoogleLogin = async () => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      setError("Email dan kata sandi wajib diisi.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    setSuccessUser(null);
 
     try {
-      // 1. Sign in with Google using Firebase Authentication Client SDK
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
+      // 1. Sign in with Email and Password using Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
 
       if (!user.email || !user.uid) {
-        throw new Error("Gagal memperoleh data email dari Google.");
+        throw new Error("Gagal memperoleh data pengguna dari Firebase.");
       }
-
-      // 2. Sync user profile with MySQL using Next.js backend API
-      const syncResponse = await fetch("/api/auth/sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: user.uid,
-          email: user.email,
-          name: user.displayName || user.email.split("@")[0],
-        }),
-      });
-
-      if (!syncResponse.ok) {
-        const syncData = await syncResponse.json();
-        // Rollback Firebase session since sync with DB failed
-        await auth.signOut();
-        throw new Error(
-          syncData.error || "Gagal melakukan sinkronisasi data ke database.",
-        );
-      }
-
-      setSuccessUser({
-        name: user.displayName,
-        email: user.email,
-      });
 
       // Redirect user to dashboard
       router.push("/dashboard");
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Login Error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      setError(
-        errorMessage || "Terjadi kesalahan saat masuk menggunakan Google.",
-      );
+
+      let errorMessage = "Terjadi kesalahan saat masuk ke akun Anda.";
+
+      if (err && err.code) {
+        switch (err.code) {
+          case "auth/user-disabled":
+            errorMessage =
+              "Silakan hubungi pengembang aplikasi untuk berlangganan";
+            break;
+          case "auth/invalid-credential":
+          case "auth/wrong-password":
+          case "auth/user-not-found":
+            errorMessage = "Email atau kata sandi yang Anda masukkan salah.";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "Format email tidak valid.";
+            break;
+          case "auth/too-many-requests":
+            errorMessage =
+              "Terlalu banyak percobaan masuk yang gagal. Silakan coba lagi nanti.";
+            break;
+          default:
+            errorMessage = err.message || errorMessage;
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -106,7 +115,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center min-h-[80vh] px-4">
+    <div className="flex-1 flex items-center justify-center min-h-screen px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
@@ -116,58 +125,70 @@ export default function LoginPage() {
             Masuk ke Aplikasi
           </CardTitle>
           <CardDescription className="text-sm">
-            Gunakan akun Google Anda untuk memulai pembuatan soal otomatis
+            Masukkan email dan kata sandi Anda untuk masuk ke aplikasi Epalio
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md text-center">
-              {error}
-            </div>
-          )}
-
-          {successUser && (
-            <div className="bg-green-500/15 border border-green-500/30 text-green-600 dark:text-green-400 text-sm p-4 rounded-md text-center space-y-1">
-              <p className="font-semibold text-base">Berhasil Masuk!</p>
-              <p className="text-xs opacity-90">
-                Halo, {successUser.name || successUser.email}. Data Anda telah
-                tersinkronisasi ke database MySQL.
-              </p>
-            </div>
-          )}
-
-          <Button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-3 transition-transform active:scale-[0.98]"
-            variant="outline"
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
+        <CardContent>
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md text-center font-medium leading-relaxed">
+                {error}
+              </div>
             )}
-            <span>{loading ? "Menghubungkan..." : "Masuk dengan Google"}</span>
-          </Button>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Alamat Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="nama@email.com"
+                  className="pl-9 h-11"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Kata Sandi</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-semibold text-primary hover:underline transition-colors"
+                >
+                  Lupa kata sandi?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-9 h-11"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 flex items-center justify-center gap-2 mt-2 transition-transform active:scale-[0.98] font-bold"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading ? "Sedang Masuk..." : "Masuk Sekarang"}
+            </Button>
+          </form>
         </CardContent>
-        <CardFooter className="text-xs text-muted-foreground justify-center text-center pb-6">
+        <CardFooter className="text-xs text-muted-foreground justify-center text-center pb-6 border-t pt-4">
           Dengan masuk, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi
           kami.
         </CardFooter>
