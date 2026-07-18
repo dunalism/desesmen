@@ -85,7 +85,7 @@ export function ExamCard({
   const status = getExamStatus();
 
   return (
-    <Card className="flex flex-col justify-between transition-all hover:ring-1 hover:ring-primary/50">
+    <Card className="flex flex-col justify-between hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex items-center justify-between mb-2">
           <Button

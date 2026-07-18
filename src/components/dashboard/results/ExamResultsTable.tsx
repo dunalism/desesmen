@@ -57,7 +57,7 @@ export function ExamResultsTable({
           </div>
         ) : (
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted">
               <TableRow>
                 <TableHead className="w-[120px]">Absen / ID</TableHead>
                 <TableHead>Nama Lengkap</TableHead>
@@ -72,7 +72,7 @@ export function ExamResultsTable({
             </TableHeader>
             <TableBody>
               {attempts.map((attempt) => (
-                <TableRow key={attempt.id}>
+                <TableRow className="even:bg-muted" key={attempt.id}>
                   <TableCell className="font-mono text-xs">
                     {attempt.studentId || "-"}
                   </TableCell>

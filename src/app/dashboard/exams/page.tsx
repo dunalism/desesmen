@@ -213,7 +213,7 @@ export default function ExamsDashboardPage() {
 
       {/* DASHBOARD LIST */}
       {exams.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center border-dashed p-12 text-center">
+        <div className="flex flex-col items-center justify-center border border-dashed rounded-xl py-16 px-4 text-center space-y-4 bg-muted/10 p-12">
           <div className="rounded-full bg-muted p-4 mb-4">
             <Clipboard className="h-12 w-12 text-muted-foreground" />
           </div>
@@ -224,7 +224,7 @@ export default function ExamsDashboardPage() {
             Anda belum pernah membuat sesi ujian. Klik tombol di atas untuk
             mengaktifkan sesi ujian baru dari paket soal yang sudah Anda miliki.
           </CardDescription>
-        </Card>
+        </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {exams.map((exam) => (

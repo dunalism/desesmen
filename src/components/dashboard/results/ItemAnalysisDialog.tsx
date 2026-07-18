@@ -90,7 +90,7 @@ export function ItemAnalysisDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-2xl md:max-w-4xl max-h-[90vh] flex flex-col p-0">
         <div className="p-6 pb-2">
           <DialogHeader>
             <DialogTitle>
