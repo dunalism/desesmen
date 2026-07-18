@@ -7,9 +7,9 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Adapter khusus TiDB Cloud
+// Adapter khusus TiDB Cloud (TCP Driver Asli yang Stabil)
 const adapter = new PrismaTiDBCloud({
-  url: process.env.DATABASE_URL, // pastikan sudah ada ?sslaccept=strict di URL
+  url: process.env.DATABASE_URL,
 });
 
 export const prisma =
