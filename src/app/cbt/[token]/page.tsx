@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,11 @@ interface AnswerState {
   optionId?: string;
   answerText?: string;
   isDoubtful?: boolean;
+}
+
+interface CustomWakeLockSentinel {
+  release(): Promise<void>;
+  released: boolean;
 }
 
 // Seeded shuffle to make it persistent on page refresh
@@ -104,6 +109,8 @@ export default function CbtExamPage({
   >([]);
   const [isOutFullscreen, setIsOutFullscreen] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
+
+  const wakeLockRef = useRef<CustomWakeLockSentinel | null>(null);
 
   // Initialize and load data from localStorage
   useEffect(() => {
@@ -367,6 +374,75 @@ export default function CbtExamPage({
       );
     }
   };
+
+  // Web Screen Wake Lock API to prevent screen sleep during exam
+  const requestWakeLock = useCallback(async () => {
+    if (typeof window === "undefined" || !("wakeLock" in navigator)) return;
+    try {
+      if (wakeLockRef.current && !wakeLockRef.current.released) {
+        return; // Already acquired and active
+      }
+      const nav = navigator as unknown as {
+        wakeLock: {
+          request(type: "screen"): Promise<CustomWakeLockSentinel>;
+        };
+      };
+      const sentinel = await nav.wakeLock.request("screen");
+      wakeLockRef.current = sentinel;
+      console.log("CBT Screen Wake Lock active");
+    } catch (err) {
+      console.warn("Screen Wake Lock request failed:", err);
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+        console.log("CBT Screen Wake Lock released");
+      } catch (err) {
+        console.error("Screen Wake Lock release failed:", err);
+      } finally {
+        wakeLockRef.current = null;
+      }
+    }
+  }, []);
+
+  // Manage Screen Wake Lock lifecycle
+  useEffect(() => {
+    if (!isExamStarted || isSuccess || submitting) {
+      releaseWakeLock();
+      return;
+    }
+
+    // Request on mount / when exam starts
+    requestWakeLock();
+
+    // Re-acquire wake lock if page becomes visible again (since OS/browser releases it on tab/app switch)
+    const handleWakeLockVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        isExamStarted &&
+        !isSuccess &&
+        !submitting
+      ) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      handleWakeLockVisibilityChange,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "visibilitychange",
+        handleWakeLockVisibilityChange,
+      );
+      releaseWakeLock();
+    };
+  }, [isExamStarted, isSuccess, submitting, requestWakeLock, releaseWakeLock]);
 
   // DAFTARKAN PELANGGARAN
   const registerViolation = useCallback(
