@@ -1,6 +1,5 @@
 import { PrismaTiDBCloud } from "@tidbcloud/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
-import { connect } from "@tidbcloud/serverless";
 import "dotenv/config";
 
 // Mencegah pembuatan instance PrismaClient berulang kali selama hot-reloading di mode development
