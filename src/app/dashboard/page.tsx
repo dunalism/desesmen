@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const handleDeleteAssessment = async (id: string) => {
     showConfirm(
       "Hapus Paket Soal",
-      "Apakah Anda yakin ingin menghapus seluruh paket soal ini? Semua butir soal di dalamnya akan dihapus permanen.",
+      "Apakah Anda yakin ingin menghapus seluruh paket soal ini? Semua butir soal di dalamnya dan ujian yang terhubung dengan paket soal ini akan dihapus permanen.",
       async () => {
         try {
           const response = await fetch(`/api/assessments/${id}`, {

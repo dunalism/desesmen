@@ -7,7 +7,7 @@ import { auth } from "@/lib/firebase";
 import { Loader2, Clipboard, AlertTriangle, ClipboardList } from "lucide-react";
 import { useDialog } from "@/components/ui/dialog-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardTitle, CardDescription } from "@/components/ui/card";
 import { ExamCard } from "@/components/dashboard/exams/ExamCard";
 import { CreateExamDialog } from "@/components/dashboard/exams/CreateExamDialog";
 import useSWRInfinite from "swr/infinite";

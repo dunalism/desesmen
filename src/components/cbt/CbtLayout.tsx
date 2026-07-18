@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wifi, WifiOff, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Wifi, WifiOff } from "lucide-react";
 
 interface CbtLayoutProps {
   children: React.ReactNode;
