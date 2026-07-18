@@ -2,17 +2,24 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 // =============================================================================
-// 1. CONFIGURATION (Opsi Beban Pengujian untuk 300 User Serentak)
+// 1. CONFIGURATION (Dinamis: Bisa 50, 100, 150, 200, 250, atau 300 VU)
 // =============================================================================
+
+// Ambil nilai target VU dari environment variable (Default: 50 VU jika tidak dispesifikasi)
+const TARGET_VUS = parseInt(__ENV.K6_VUS || "50", 10);
+
 export const options = {
-  stages: [
-    { duration: "2m", target: 300 }, // Ramping up: Naikkan beban perlahan dari 0 ke 300 user selama 2 menit
-    { duration: "5m", target: 300 }, // Steady state: Tahan di 300 user selama 5 menit (Siswa sedang mengerjakan & submit)
-    { duration: "1m", target: 0 }, // Ramping down: Turunkan beban perlahan kembali ke 0 user selama 1 menit
-  ],
+  scenarios: {
+    ujian_cbt: {
+      executor: "per-vu-iterations",
+      vus: TARGET_VUS, // Jumlah siswa simulasi (Dinamis sesuai pilihan Anda)
+      iterations: 1, // Setiap siswa HANYA mengirim/submit persis 1 kali (no looping!)
+      maxDuration: "10m", // Batas toleransi durasi total pengujian
+    },
+  },
   thresholds: {
-    http_req_failed: ["rate<0.01"], // Toleransi kegagalan API harus di bawah 1% (Error 500/504 dkk)
-    http_req_duration: ["p(95)<2000"], // 95% dari request pengiriman lembar jawaban harus selesai di bawah 2000ms
+    http_req_failed: ["rate<0.01"], // Toleransi kegagalan API harus di bawah 1% (no error 500/504 dkk)
+    http_req_duration: ["p(95)<2000"], // 95% dari request kirim harus selesai di bawah 2 detik
   },
 };
 

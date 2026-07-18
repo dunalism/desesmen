@@ -1,6 +1,6 @@
 # Panduan Pengujian Beban CBT Menggunakan k6
 
-Dokumentasi ini memberikan instruksi langkah demi langkah tentang cara menjalankan pengujian beban (_load testing_) CBT dengan simulasi 300 pengguna serentak di lingkungan lokal ataupun Vercel Preview.
+Dokumentasi ini memberikan instruksi langkah demi langkah tentang cara menjalankan pengujian beban (_load testing_) CBT dengan berbagai variasi jumlah siswa serentak di lingkungan lokal ataupun Vercel Preview secara aman tanpa bentrok.
 
 ## 📌 Prasyarat
 
@@ -11,29 +11,44 @@ Sebelum memulai, pastikan komputer Anda telah terinstal:
 
 ---
 
-## 🏃‍♂️ Cara Menjalankan Pengujian
+## 🏃‍♂️ Cara Menjalankan Pengujian Beban Dinamis (Sekali Jalan / No Looping)
 
-Anda dapat menjalankan skrip uji k6 ini dengan menyesuaikan variabel lingkungan (_environment variables_) agar menunjuk ke alamat staging/preview Anda.
+Kita menggunakan tipe skenario `per-vu-iterations` untuk menjamin **setiap Virtual User (VU) hanya men-submit persis 1 kali**. Anda dapat menentukan jumlah pengguna aktif secara dinamis lewat variabel `K6_VUS`.
 
-### 1. Pengujian di Lingkungan Lokal (Localhost)
-
-Untuk memastikan skrip berjalan dengan baik, lakukan uji coba singkat di komputer lokal Anda terlebih dahulu:
+### 1. Simulasi 50 Siswa (Sangat Aman untuk Kelas Kecil)
 
 ```bash
-# Menjalankan k6 dengan target localhost (Default Token: MAT-7X2)
-k6 run tests/performance/cbt-load-test.js
-
-# Menjalankan k6 dengan token ujian lokal kustom Anda
-k6 run -e K6_CBT_TOKEN=KODE_TOKEN_LOKAL_ANDA tests/performance/cbt-load-test.js
+k6 run -e K6_VUS=50 -e K6_BASE_URL=https://desesmen.vercel.app -e K6_CBT_TOKEN=A4TR2Q tests/performance/cbt-load-test.js
 ```
 
-### 2. Pengujian di Lingkungan Vercel Preview (Disarankan untuk 300 VU)
-
-Arahkan lalu lintas pengujian ke tautan pratinjau Vercel Anda dan token ujian aktif yang ada di database cloud:
+### 2. Simulasi 100 Siswa
 
 ```bash
-# Ganti URL dan TOKEN sesuai dengan environment staging/preview Anda
-k6 run -e K6_BASE_URL=https://soalgenerator-preview-xxx.vercel.app -e K6_CBT_TOKEN=MAT-7X2 tests/performance/cbt-load-test.js
+k6 run -e K6_VUS=100 -e K6_BASE_URL=https://desesmen.vercel.app -e K6_CBT_TOKEN=A4TR2Q tests/performance/cbt-load-test.js
+```
+
+### 3. Simulasi 150 Siswa
+
+```bash
+k6 run -e K6_VUS=150 -e K6_BASE_URL=https://desesmen.vercel.app -e K6_CBT_TOKEN=A4TR2Q tests/performance/cbt-load-test.js
+```
+
+### 4. Simulasi 200 Siswa
+
+```bash
+k6 run -e K6_VUS=200 -e K6_BASE_URL=https://desesmen.vercel.app -e K6_CBT_TOKEN=A4TR2Q tests/performance/cbt-load-test.js
+```
+
+### 5. Simulasi 250 Siswa
+
+```bash
+k6 run -e K6_VUS=250 -e K6_BASE_URL=https://desesmen.vercel.app -e K6_CBT_TOKEN=A4TR2Q tests/performance/cbt-load-test.js
+```
+
+### 6. Simulasi 300 Siswa (Uji Batas Maksimal)
+
+```bash
+k6 run -e K6_VUS=300 -e K6_BASE_URL=https://desesmen.vercel.app -e K6_CBT_TOKEN=A4TR2Q tests/performance/cbt-load-test.js
 ```
 
 ---
@@ -44,12 +59,12 @@ Setelah pengujian selesai dijalankan, k6 akan merangkum metrik performa di termi
 
 1.  **`http_req_failed`**: Menunjukkan persentase request yang gagal. Harus bernilai **0.00%** (Sesuai kriteria kelaikan: di bawah 1%). Jika ada kegagalan, periksa apakah database MySQL/TiDB Anda kehabisan koneksi.
 2.  **`http_req_duration`**: Waktu respon pengiriman. Sesuai kriteria ambang batas, **p(95)** (95% dari total pengiriman) harus di bawah **2000ms (2 detik)**.
-3.  **`vus`**: Jumlah virtual user aktif selama pengujian berlangsung (akan mencapai puncak di angka 300).
+3.  **`vus`**: Jumlah virtual user aktif selama pengujian berlangsung (akan mencapai puncak sesuai angka `K6_VUS` yang Anda set).
 4.  **`checks`**: Memastikan asersi pengunduhan soal dan penyerahan lembar jawaban berhasil 100%.
 
 ---
 
 ## ⚠️ Catatan Keamanan & Praktik Terbaik
 
-- **Jangan gunakan alamat Production:** Menembak domain utama produksi dengan 300 VU secara agresif berpotensi menguras kuota bandwidth Vercel Anda dan memicu firewall keamanan (Vercel Shield).
+- **Jangan gunakan alamat Production:** Menembak domain utama produksi dengan banyak VU secara agresif berpotensi menguras kuota bandwidth Vercel Anda dan memicu firewall keamanan (Vercel Shield).
 - **Gunakan Database Bayangan (Staging DB):** Pastikan Preview URL Anda terhubung ke database terpisah agar data simulasi pengujian k6 ini tidak mencemari nilai siswa riil di database utama.
