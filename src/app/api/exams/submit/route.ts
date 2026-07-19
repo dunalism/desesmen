@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,19 +17,19 @@ export async function POST(request: Request) {
       startedAt,
       durationSeconds,
     } = body;
+    const trimmedName = studentName.trim();
+    const trimmedStudentId = studentId.trim();
+    const trimmedToken = examToken.trim();
 
     // 1. Validasi Kehadiran Input Utama
-    if (!studentName || !examToken || !Array.isArray(answers)) {
+    if (
+      !trimmedName ||
+      !trimmedStudentId ||
+      !trimmedToken ||
+      !Array.isArray(answers)
+    ) {
       return NextResponse.json(
         { error: "Data input tidak lengkap atau tidak valid." },
-        { status: 400 },
-      );
-    }
-
-    const trimmedName = studentName.trim();
-    if (!trimmedName) {
-      return NextResponse.json(
-        { error: "Nama siswa tidak boleh kosong." },
         { status: 400 },
       );
     }
@@ -77,22 +78,6 @@ export async function POST(request: Request) {
             "Waktu pengerjaan ujian telah berakhir (lewat batas toleransi pengiriman).",
         },
         { status: 403 },
-      );
-    }
-
-    // 5. Validasi Anti Double-Submit (Mencegah pengiriman ganda)
-    const existingAttempt = await prisma.examAttempt.findFirst({
-      where: {
-        examId: exam.id,
-        studentName: trimmedName,
-        ...(studentId ? { studentId: studentId.trim() } : {}),
-      },
-    });
-
-    if (existingAttempt) {
-      return NextResponse.json(
-        { error: "Jawaban Anda sudah tersimpan sebelumnya." },
-        { status: 409 },
       );
     }
 
@@ -176,7 +161,7 @@ export async function POST(request: Request) {
       data: {
         examId: exam.id,
         studentName: trimmedName,
-        studentId: studentId ? studentId.trim() : null,
+        studentId: studentId ? trimmedStudentId : null,
         startedAt: startedAt,
         submittedAt: submittedAt,
         durationSeconds: durationSeconds,
@@ -211,6 +196,20 @@ export async function POST(request: Request) {
       message: "Lembar jawaban berhasil disimpan.",
     });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        {
+          error: "Jawaban Anda sudah tersimpan sebelumnya.",
+        },
+        {
+          status: 409,
+        },
+      );
+    }
+
     console.error("Error submitting exam:", error);
     const errorMessage =
       error instanceof Error

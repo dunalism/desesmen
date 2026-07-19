@@ -153,6 +153,7 @@ model ExamAttempt {
   answers     StudentAnswer[]
 
   @@map("exam_attempts")
+  @@unique([examId, studentId])
 }
 
 // 7. Model Detail Jawaban Siswa (StudentAnswer) - Jawaban per Butir Soal

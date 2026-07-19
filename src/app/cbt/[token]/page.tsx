@@ -723,6 +723,7 @@ export default function CbtExamPage({
 
       // Success! Clear local storage and session storage for this exam session
       localStorage.clear();
+      sessionStorage.clear();
 
       showAlert(
         "Ujian Selesai",
@@ -762,6 +763,7 @@ export default function CbtExamPage({
 
         // Clear storages as well on already-submitted error to avoid lock-up
         localStorage.clear();
+        sessionStorage.clear();
         setIsSuccess(true);
         router.push("/cbt/success");
       } else {
