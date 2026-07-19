@@ -124,7 +124,7 @@ export default function CbtExamPage({
         const studentRef = doc(
           db,
           "exams",
-          exam.examId,
+          exam.token,
           "students",
           `${student.studentId}_${student.name}`,
         );
@@ -625,6 +625,16 @@ export default function CbtExamPage({
     ],
   );
 
+  const exitFullscreen = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const doc = document as any;
+
+    if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+      doc.exitFullscreen?.().catch(() => {}); // Optional chaining
+      doc.webkitExitFullscreen?.(); // Optional chaining
+    }
+  };
+
   // Submitting the Exam
   const performSubmission = useCallback(async () => {
     if (!student || !exam) return;
@@ -691,7 +701,7 @@ export default function CbtExamPage({
         const studentRef = doc(
           db,
           "exams",
-          exam.examId,
+          exam.token,
           "students",
           `${student.studentId}_${student.name}`,
         );
@@ -704,24 +714,7 @@ export default function CbtExamPage({
         console.warn("Failed to set status to COMPLETED:", fbErr);
       }
 
-      // Exit fullscreen if active
-      if (
-        document.fullscreenElement ||
-        (document as unknown as Record<string, unknown>).webkitFullscreenElement
-      ) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        } else if (
-          (document as unknown as Record<string, unknown>).webkitExitFullscreen
-        ) {
-          (
-            (document as unknown as Record<string, unknown>)
-              .webkitExitFullscreen as () => void
-          )();
-        }
-      }
-
-      // Success! Clear local storage and session storage for this exam session
+      exitFullscreen();
       localStorage.clear();
       sessionStorage.clear();
 
@@ -738,7 +731,7 @@ export default function CbtExamPage({
       if (errMsg.includes("sudah tersimpan")) {
         showAlert(
           "Sudah Tersimpan",
-          "Jawaban Anda untuk ujian/tugas ini sudah tersimpan di server sebelumnya. Anda tidak perlu mengirimkannya lagi.",
+          "Jawaban Anda untuk ujian ini sudah tersimpan di server sebelumnya. Anda tidak perlu mengirimkannya lagi.",
         );
 
         // Update status ke COMPLETED di Firestore jika konflik / sudah tersimpan
@@ -748,7 +741,7 @@ export default function CbtExamPage({
           const studentRef = doc(
             db,
             "exams",
-            exam.examId,
+            exam.token,
             "students",
             `${student.studentId}_${student.name}`,
           );
@@ -761,7 +754,7 @@ export default function CbtExamPage({
           console.warn("Failed to set status to COMPLETED on conflict:", fbErr);
         }
 
-        // Clear storages as well on already-submitted error to avoid lock-up
+        exitFullscreen();
         localStorage.clear();
         sessionStorage.clear();
         setIsSuccess(true);
