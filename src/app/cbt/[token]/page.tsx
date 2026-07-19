@@ -791,7 +791,16 @@ export default function CbtExamPage({
       setSubmitting(false);
       setJitterTime(null);
     }
-  }, [student, exam, questions, answers, token, router, showAlert]);
+  }, [
+    student,
+    exam,
+    questions,
+    token,
+    answers,
+    showAlert,
+    router,
+    pulseStudentExam,
+  ]);
 
   const handleSubmitClick = () => {
     // Check if there are unanswered questions

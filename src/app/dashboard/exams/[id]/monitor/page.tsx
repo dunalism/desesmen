@@ -1,19 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import {
-  collection,
-  onSnapshot,
-  doc,
-  setDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import {
   Loader2,
-  AlertTriangle,
   ArrowLeft,
   Activity,
   Users,
@@ -24,7 +18,6 @@ import {
   Search,
   Check,
   Send,
-  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,7 +61,7 @@ export default function LiveMonitorPage({
   const [loadingData, setLoadingLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [submittingForStudent, setSubmittingForStudent] = useState<
     string | null
   >(null);
@@ -99,6 +92,7 @@ export default function LiveMonitorPage({
   useEffect(() => {
     if (!userId) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingLoading(true);
     const studentsCol = collection(db, "exams", id, "students");
     const unsubscribe = onSnapshot(
@@ -144,25 +138,25 @@ export default function LiveMonitorPage({
   };
 
   // Helper untuk menentukan status keaktifan siswa (termasuk deteksi offline > 90 detik)
-  const getProcessedStudents = (): StudentPulse[] => {
+  const processedStudents = useMemo(() => {
     return students.map((std) => {
-      // Siswa COMPLETED tetap COMPLETED
       if (std.status === "COMPLETED") return std;
 
-      // Cek apakah data heartbeat macet lebih dari 90 detik
+      // Cek apakah heartbeat macet lebih dari 90 detik
       const secondsSinceActive = Math.floor(
         (currentTime - std.lastActiveDate.getTime()) / 1000,
       );
+
       if (secondsSinceActive > 90) {
         return {
           ...std,
-          status: "OFFLINE",
+          status: "OFFLINE" as const,
         };
       }
 
       return std;
     });
-  };
+  }, [students, currentTime]);
 
   // Handler bantu submit paksa lembar jawaban siswa dari kejauhan
   const handleForceSubmit = (std: StudentPulse) => {
@@ -226,35 +220,58 @@ export default function LiveMonitorPage({
     );
   };
 
-  const processedStudents = getProcessedStudents();
-
   // Hitung metrik ringkasan
-  const stats = {
-    total: processedStudents.length,
-    active: processedStudents.filter((s) => s.status === "ACTIVE").length,
-    idle: processedStudents.filter((s) => s.status === "IDLE").length,
-    offline: processedStudents.filter((s) => s.status === "OFFLINE").length,
-    completed: processedStudents.filter((s) => s.status === "COMPLETED").length,
-    failed: processedStudents.filter((s) => s.status === "SUBMIT_FAILED")
-      .length,
-  };
+  const stats = useMemo(() => {
+    const stats = {
+      total: processedStudents.length,
+      active: 0,
+      idle: 0,
+      offline: 0,
+      completed: 0,
+      failed: 0,
+    };
+
+    for (const student of processedStudents) {
+      switch (student.status) {
+        case "ACTIVE":
+          stats.active++;
+          break;
+        case "IDLE":
+          stats.idle++;
+          break;
+        case "OFFLINE":
+          stats.offline++;
+          break;
+        case "COMPLETED":
+          stats.completed++;
+          break;
+        case "SUBMIT_FAILED":
+          stats.failed++;
+          break;
+      }
+    }
+
+    return stats;
+  }, [processedStudents]);
 
   // Filter siswa berdasarkan pencarian & status filter
-  const filteredStudents = processedStudents.filter((std) => {
-    const matchesSearch =
-      std.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      std.studentId.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredStudents = useMemo(() => {
+    return processedStudents.filter((std) => {
+      const matchesSearch =
+        std.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        std.studentId.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter =
-      statusFilter === "ALL" ||
-      (statusFilter === "ACTIVE" && std.status === "ACTIVE") ||
-      (statusFilter === "IDLE" && std.status === "IDLE") ||
-      (statusFilter === "OFFLINE" && std.status === "OFFLINE") ||
-      (statusFilter === "COMPLETED" && std.status === "COMPLETED") ||
-      (statusFilter === "FAILED" && std.status === "SUBMIT_FAILED");
+      const matchesFilter =
+        statusFilter === "ALL" ||
+        (statusFilter === "ACTIVE" && std.status === "ACTIVE") ||
+        (statusFilter === "IDLE" && std.status === "IDLE") ||
+        (statusFilter === "OFFLINE" && std.status === "OFFLINE") ||
+        (statusFilter === "COMPLETED" && std.status === "COMPLETED") ||
+        (statusFilter === "FAILED" && std.status === "SUBMIT_FAILED");
 
-    return matchesSearch && matchesFilter;
-  });
+      return matchesSearch && matchesFilter;
+    });
+  }, [processedStudents, searchQuery, statusFilter]);
 
   if (authLoading) {
     return (
