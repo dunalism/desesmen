@@ -310,7 +310,7 @@ export default function LiveMonitorPage({
               </div>
               <p className="text-xs text-muted-foreground">
                 Sesi ID: <strong className="font-mono">{id}</strong> •
-                Menggunakan Saluran Firestore Realtime
+                Montioring Realtime
               </p>
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function LiveMonitorPage({
           <div className="flex h-[40vh] flex-col items-center justify-center gap-3 bg-background border rounded-xl shadow-sm">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-sm font-medium text-muted-foreground">
-              Menghubungkan Saluran Live Monitoring Firestore...
+              Menghubungkan Saluran Live Monitoring
             </p>
           </div>
         ) : filteredStudents.length === 0 ? (
