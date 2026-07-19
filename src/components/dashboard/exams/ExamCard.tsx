@@ -220,7 +220,7 @@ export function ExamCard({
         <Button
           variant="default"
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-          onClick={() => router.push(`/dashboard/exams/${exam.id}/monitor`)}
+          onClick={() => router.push(`/dashboard/exams/${exam.token}/monitor`)}
         >
           <Activity className="mr-2 h-4 w-4 shrink-0 animate-pulse text-red-500" />{" "}
           Pantau Ujian (Live)

@@ -196,18 +196,20 @@ export async function POST(request: Request) {
       message: "Lembar jawaban berhasil disimpan.",
     });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      return NextResponse.json(
-        {
-          error: "Jawaban Anda sudah tersimpan sebelumnya.",
-        },
-        {
-          status: 409,
-        },
-      );
+    if (typeof error === "object" && error !== null && "details" in error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const details = (error as any).details;
+
+      if (details?.message?.includes("Duplicate entry")) {
+        return NextResponse.json(
+          {
+            error: "Jawaban Anda sudah tersimpan sebelumnya.",
+          },
+          {
+            status: 409,
+          },
+        );
+      }
     }
 
     console.error("Error submitting exam:", error);

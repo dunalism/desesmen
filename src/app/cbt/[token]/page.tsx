@@ -769,7 +769,7 @@ export default function CbtExamPage({
       } else {
         const errorMsg =
           errMsg ||
-          "Gagal terhubung ke server. Lembar jawaban Anda tetap aman disimpan di laptop ini.";
+          "Gagal terhubung ke server. Lembar jawaban Anda tetap aman disimpan di perangkat ini.";
         setSubmitError(errorMsg);
 
         // Pulse instan ke Firestore dengan status SUBMIT_FAILED dan error-nya
