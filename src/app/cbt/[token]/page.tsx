@@ -112,6 +112,129 @@ export default function CbtExamPage({
 
   const wakeLockRef = useRef<CustomWakeLockSentinel | null>(null);
 
+  // Pulse Student Status to Firestore (0% TiDB load & Zero cost)
+  const pulseStudentExam = useCallback(
+    async (statusOverride?: string, customSubmitError?: string | null) => {
+      if (!student || !exam) return;
+      try {
+        const { doc, setDoc, serverTimestamp } =
+          await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+
+        const studentRef = doc(
+          db,
+          "exams",
+          exam.examId,
+          "students",
+          `${student.studentId}_${student.name}`,
+        );
+
+        const startMs = localStorage.getItem(`cbt-timer-start-${token}`);
+        const currentSecs = startMs
+          ? Math.floor((Date.now() - parseInt(startMs)) / 1000)
+          : 0;
+
+        const currentAnswersFormatted = questions.map((q) => {
+          const ans = answers[q.id];
+          return {
+            questionId: q.id,
+            chosenOptionId: ans?.optionId || null,
+            textAnswer: ans?.answerText || null,
+          };
+        });
+
+        const answeredCount = questions.filter((q) => {
+          const ans = answers[q.id];
+          return (
+            ans &&
+            (ans.optionId || (ans.answerText && ans.answerText.trim() !== ""))
+          );
+        }).length;
+
+        const finalError =
+          customSubmitError !== undefined ? customSubmitError : submitError;
+        const isCurrentlyHidden = document.hidden;
+        const isCurrentlyIdle = isOutFullscreen || isCurrentlyHidden;
+
+        let finalStatus = "ACTIVE";
+        if (statusOverride) {
+          finalStatus = statusOverride;
+        } else if (finalError) {
+          finalStatus = "SUBMIT_FAILED";
+        } else if (isCurrentlyIdle) {
+          finalStatus = "IDLE";
+        }
+
+        await setDoc(
+          studentRef,
+          {
+            studentName: student.name.trim(),
+            studentId: student.studentId.trim(),
+            currentProgress: answeredCount,
+            totalQuestions: questions.length,
+            violationCount: violationCount,
+            lastActive: serverTimestamp(),
+            status: finalStatus,
+            submitError: finalError,
+            answers: currentAnswersFormatted,
+            startedAt:
+              localStorage.getItem(`cbt-timer-start-date-${token}`) ||
+              new Date().toISOString(),
+            durationSeconds: currentSecs,
+          },
+          { merge: true },
+        );
+      } catch (err) {
+        console.warn("Pulse failed silently (Offline mode active):", err);
+      }
+    },
+    [
+      student,
+      exam,
+      token,
+      questions,
+      answers,
+      violationCount,
+      isOutFullscreen,
+      submitError,
+    ],
+  );
+
+  // Loop Pulse berkala setiap 30 detik
+  useEffect(() => {
+    if (!isExamStarted || isSuccess || submitting || !student || !exam) return;
+
+    // Pulse pertama kali setelah mulai
+    pulseStudentExam();
+
+    const interval = setInterval(() => {
+      pulseStudentExam();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isExamStarted, isSuccess, submitting, student, exam, pulseStudentExam]);
+
+  // Pulse instan saat ada perpindahan fokus fullscreen
+  useEffect(() => {
+    if (isExamStarted && !isSuccess && !submitting) {
+      pulseStudentExam();
+    }
+  }, [isOutFullscreen, isExamStarted, isSuccess, submitting, pulseStudentExam]);
+
+  // Pulse instan saat ada perpindahan fokus visibility tab
+  useEffect(() => {
+    if (!isExamStarted || isSuccess || submitting) return;
+
+    const handlePulseVisibility = () => {
+      pulseStudentExam();
+    };
+
+    document.addEventListener("visibilitychange", handlePulseVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handlePulseVisibility);
+    };
+  }, [isExamStarted, isSuccess, submitting, pulseStudentExam]);
+
   // Initialize and load data from localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -561,6 +684,26 @@ export default function CbtExamPage({
         throw new Error(resData.error || "Gagal menyimpan lembar jawaban.");
       }
 
+      // Update status ke COMPLETED di Firestore agar guru tahu ini sukses
+      try {
+        const { doc, setDoc } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const studentRef = doc(
+          db,
+          "exams",
+          exam.examId,
+          "students",
+          `${student.studentId}_${student.name}`,
+        );
+        await setDoc(
+          studentRef,
+          { status: "COMPLETED", submitError: null },
+          { merge: true },
+        );
+      } catch (fbErr) {
+        console.warn("Failed to set status to COMPLETED:", fbErr);
+      }
+
       // Exit fullscreen if active
       if (
         document.fullscreenElement ||
@@ -600,6 +743,27 @@ export default function CbtExamPage({
           "Sudah Tersimpan",
           "Jawaban Anda untuk ujian/tugas ini sudah tersimpan di server sebelumnya. Anda tidak perlu mengirimkannya lagi.",
         );
+
+        // Update status ke COMPLETED di Firestore jika konflik / sudah tersimpan
+        try {
+          const { doc, setDoc } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
+          const studentRef = doc(
+            db,
+            "exams",
+            exam.examId,
+            "students",
+            `${student.studentId}_${student.name}`,
+          );
+          await setDoc(
+            studentRef,
+            { status: "COMPLETED", submitError: null },
+            { merge: true },
+          );
+        } catch (fbErr) {
+          console.warn("Failed to set status to COMPLETED on conflict:", fbErr);
+        }
+
         // Clear storages as well on already-submitted error to avoid lock-up
         localStorage.removeItem(`cbt-student-session-${token}`);
         localStorage.removeItem(`cbt-exam-data-${token}`);
@@ -610,10 +774,14 @@ export default function CbtExamPage({
         setIsSuccess(true);
         router.push("/cbt/success");
       } else {
-        setSubmitError(
+        const errorMsg =
           errMsg ||
-            "Gagal terhubung ke server. Lembar jawaban Anda tetap aman disimpan di laptop ini.",
-        );
+          "Gagal terhubung ke server. Lembar jawaban Anda tetap aman disimpan di laptop ini.";
+        setSubmitError(errorMsg);
+
+        // Pulse instan ke Firestore dengan status SUBMIT_FAILED dan error-nya
+        pulseStudentExam("SUBMIT_FAILED", errorMsg);
+
         showAlert(
           "Koneksi Gagal",
           "Sistem tidak dapat terhubung ke server untuk mengirimkan nilai. Lembar jawaban Anda telah di-backup dengan aman di browser ini. Silakan hubungi pengawas atau klik 'Kirim Ulang' setelah koneksi pulih.",

@@ -54,15 +54,38 @@ export default function CbtLoginPage() {
         throw new Error(data.error || "Gagal mengunduh soal ujian.");
       }
 
+      // 1. Lakukan Firebase Anonymous Sign-In agar siswa bisa menulis Pulse ke Firestore tanpa repot login
+      try {
+        const { signInAnonymously } = await import("firebase/auth");
+        const { auth } = await import("@/lib/firebase");
+        await signInAnonymously(auth);
+      } catch (fbAuthErr) {
+        console.warn(
+          "Gagal Firebase Anonymous Auth, mencoba lanjut:",
+          fbAuthErr,
+        );
+      }
+
       // Simpan session siswa ke localStorage
+      const startTimeStr = new Date().toString();
       localStorage.setItem(
         `cbt-student-session-${cleanToken}`,
         JSON.stringify({
           name: name.trim(),
           studentId: studentId.trim(),
           token: cleanToken,
-          startedAt: btoa(new Date().toString()),
+          startedAt: btoa(startTimeStr),
         }),
+      );
+
+      // Simpan penanda timer pengerjaan agar presisi di Firestore & Local
+      localStorage.setItem(
+        `cbt-timer-start-${cleanToken}`,
+        Date.now().toString(),
+      );
+      localStorage.setItem(
+        `cbt-timer-start-date-${cleanToken}`,
+        new Date().toISOString(),
       );
 
       // Simpan data ujian (soal dkk) ke localStorage

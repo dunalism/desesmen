@@ -13,6 +13,7 @@ import {
   Clock,
   Shuffle,
   Eye,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -215,10 +216,18 @@ export function ExamCard({
         </div>
       </CardContent>
 
-      <CardFooter className="bg-transparent">
+      <CardFooter className="bg-transparent flex flex-col gap-2">
+        <Button
+          variant="default"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+          onClick={() => router.push(`/dashboard/exams/${exam.id}/monitor`)}
+        >
+          <Activity className="mr-2 h-4 w-4 shrink-0 animate-pulse text-red-500" />{" "}
+          Pantau Ujian (Live)
+        </Button>
         <Button
           variant="secondary"
-          className="w-full"
+          className="w-full font-semibold"
           onClick={() => router.push(`/dashboard/exams/${exam.id}/results`)}
         >
           <Eye className="mr-2 h-4 w-4" /> Lihat Hasil & Rekap Nilai
