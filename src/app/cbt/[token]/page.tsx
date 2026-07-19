@@ -722,11 +722,7 @@ export default function CbtExamPage({
       }
 
       // Success! Clear local storage and session storage for this exam session
-      localStorage.removeItem(`cbt-student-session-${token}`);
-      localStorage.removeItem(`cbt-exam-data-${token}`);
-      localStorage.removeItem(`cbt-timer-${token}`);
-      localStorage.removeItem(`cbt-answers-${token}`);
-      sessionStorage.removeItem(`cbt-session-${token}`);
+      localStorage.clear();
 
       showAlert(
         "Ujian Selesai",
@@ -765,12 +761,7 @@ export default function CbtExamPage({
         }
 
         // Clear storages as well on already-submitted error to avoid lock-up
-        localStorage.removeItem(`cbt-student-session-${token}`);
-        localStorage.removeItem(`cbt-exam-data-${token}`);
-        localStorage.removeItem(`cbt-timer-${token}`);
-        localStorage.removeItem(`cbt-answers-${token}`);
-        sessionStorage.removeItem(`cbt-session-${token}`);
-
+        localStorage.clear();
         setIsSuccess(true);
         router.push("/cbt/success");
       } else {

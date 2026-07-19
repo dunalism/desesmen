@@ -183,7 +183,7 @@ export default function DashboardLayout({
                 alt={user.displayName! || user.email!}
               />
               <AvatarFallback>
-                {user.displayName?.charAt(0) || user.email!.charAt(0)}
+                {user.displayName?.charAt(0) || user.email?.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className="text-left">
@@ -268,7 +268,7 @@ export default function DashboardLayout({
                         alt={user.displayName! || user.email!}
                       />
                       <AvatarFallback>
-                        {user.displayName?.charAt(0) || user.email!.charAt(0)}
+                        {user.displayName?.charAt(0) || user.email?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-left">

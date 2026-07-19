@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const t0 = performance.now();
     // 2. Ambil data Exam beserta seluruh soal dan opsi jawaban asli (0 query tambahan per soal / anti N+1)
     const exam = await prisma.exam.findUnique({
       where: { token: examToken },
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    console.log(`[PERF] findUnique: ${(performance.now() - t0).toFixed(2)} ms`);
 
     if (!exam) {
       return NextResponse.json(
@@ -93,6 +96,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const t1 = performance.now();
     // 6. Server-side Autograding Logic
     let correctCount = 0;
     const questionsList = exam.assessment.questions;
@@ -166,9 +170,12 @@ export async function POST(request: Request) {
     const score =
       totalAutoGraded > 0 ? (correctCount / totalAutoGraded) * 100 : 0;
     const isGraded = !hasManualQuestions;
+    console.log(`[PERF] grading: ${(performance.now() - t1).toFixed(2)} ms`);
 
+    const t2 = performance.now();
     // 7. Prisma Atomic Transaction (All-or-Nothing)
     await prisma.$transaction(async (tx) => {
+      const t3 = performance.now();
       // a. Buat entri baru di tabel ExamAttempt
       const attempt = await tx.examAttempt.create({
         data: {
@@ -182,6 +189,9 @@ export async function POST(request: Request) {
           isGraded,
         },
       });
+      console.log(
+        `[PERF] examAttempt.create: ${(performance.now() - t3).toFixed(2)} ms`,
+      );
 
       // b. Buat entri detail jawaban siswa secara massal
       const answersPayload = studentAnswersData.map((ans) => ({
@@ -192,10 +202,21 @@ export async function POST(request: Request) {
         isCorrect: ans.isCorrect,
       }));
 
+      console.log(`[PERF] answersPayload length = ${answersPayload.length}`);
+
+      const t4 = performance.now();
       await tx.studentAnswer.createMany({
         data: answersPayload,
       });
+      console.log(
+        `[PERF] studentAnswer.createMany: ${(performance.now() - t4).toFixed(2)} ms`,
+      );
     });
+    console.log(
+      `[PERF] prisma.$transaction: ${(performance.now() - t2).toFixed(2)} ms`,
+    );
+
+    console.log(`[PERF] total: ${(performance.now() - t0).toFixed(2)} ms`);
 
     // 8. Kembalikan respon sukses tanpa membocorkan nilai ke siswa (sesuai roadmap)
     return NextResponse.json({
