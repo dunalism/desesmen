@@ -170,42 +170,40 @@ export async function POST(request: Request) {
       totalAutoGraded > 0 ? (correctCount / totalAutoGraded) * 100 : 0;
     const isGraded = !hasManualQuestions;
 
+    // a. Buat entri baru di tabel ExamAttempt
     const txStart = performance.now();
-    // 7. Prisma Atomic Transaction (All-or-Nothing)
-    await prisma.$transaction(async (tx) => {
-      console.log(
-        `[PERF] tx started after ${(performance.now() - txStart).toFixed(2)} ms`,
-      ); // a. Buat entri baru di tabel ExamAttempt
-      const t3 = performance.now();
-      const attempt = await tx.examAttempt.create({
-        data: {
-          examId: exam.id,
-          studentName: trimmedName,
-          studentId: studentId ? studentId.trim() : null,
-          startedAt: startedAt,
-          submittedAt: submittedAt,
-          durationSeconds: durationSeconds,
-          score: Math.round(score),
-          isGraded,
-        },
-      });
-      console.log(
-        `[PERF] create attempt ${(performance.now() - t3).toFixed(2)} ms`,
-      );
-
-      // b. Buat entri detail jawaban siswa secara massal
-      const answersPayload = studentAnswersData.map((ans) => ({
-        attemptId: attempt.id,
-        questionId: ans.questionId,
-        chosenOptionId: ans.chosenOptionId,
-        textAnswer: ans.textAnswer,
-        isCorrect: ans.isCorrect,
-      }));
-
-      await tx.studentAnswer.createMany({
-        data: answersPayload,
-      });
+    const attempt = await prisma.examAttempt.create({
+      data: {
+        examId: exam.id,
+        studentName: trimmedName,
+        studentId: studentId ? studentId.trim() : null,
+        startedAt: startedAt,
+        submittedAt: submittedAt,
+        durationSeconds: durationSeconds,
+        score: Math.round(score),
+        isGraded,
+      },
     });
+    console.log(
+      `[PERF] prisma.examAttempt.create after ${(performance.now() - txStart).toFixed(2)} ms`,
+    );
+
+    // b. Buat entri detail jawaban siswa secara massal
+    const answersPayload = studentAnswersData.map((ans) => ({
+      attemptId: attempt.id,
+      questionId: ans.questionId,
+      chosenOptionId: ans.chosenOptionId,
+      textAnswer: ans.textAnswer,
+      isCorrect: ans.isCorrect,
+    }));
+
+    const t3 = performance.now();
+    await prisma.studentAnswer.createMany({
+      data: answersPayload,
+    });
+    console.log(
+      `[PERF] prisma.studentAnswer.createMany after ${(performance.now() - t3).toFixed(2)} ms`,
+    );
 
     // 8. Kembalikan respon sukses tanpa membocorkan nilai ke siswa (sesuai roadmap)
     return NextResponse.json({
