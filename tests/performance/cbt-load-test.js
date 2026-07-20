@@ -8,18 +8,39 @@ import { check, sleep } from "k6";
 // Ambil nilai target VU dari environment variable (Default: 50 VU jika tidak dispesifikasi)
 const TARGET_VUS = parseInt(__ENV.K6_VUS || "50", 10);
 
+// export const options = {
+//   scenarios: {
+//     ujian_cbt: {
+//       executor: "per-vu-iterations",
+//       vus: TARGET_VUS, // Jumlah siswa simulasi (Dinamis sesuai pilihan Anda)
+//       iterations: 1, // Setiap siswa HANYA mengirim/submit persis 1 kali (no looping!)
+//       maxDuration: "10m", // Batas toleransi durasi total pengujian
+//     },
+//   },
+//   thresholds: {
+//     http_req_failed: ["rate<0.01"], // Toleransi kegagalan API harus di bawah 1% (no error 500/504 dkk)
+//     http_req_duration: ["p(95)<2000"], // 95% dari request kirim harus selesai di bawah 2 detik
+//   },
+// };
+
 export const options = {
   scenarios: {
     ujian_cbt: {
-      executor: "per-vu-iterations",
-      vus: TARGET_VUS, // Jumlah siswa simulasi (Dinamis sesuai pilihan Anda)
-      iterations: 1, // Setiap siswa HANYA mengirim/submit persis 1 kali (no looping!)
-      maxDuration: "10m", // Batas toleransi durasi total pengujian
+      executor: "ramping-vus",
+      startVUs: 0,
+      stages: [
+        { duration: "30s", target: 20 }, // Awal login 20 siswa
+        { duration: "1m", target: 50 }, // Naik ke 50 siswa (mulai ujian)
+        { duration: "3m", target: 50 }, // Stabil: semua siswa aktif mengerjakan soal
+        { duration: "1m", target: 80 }, // Puncak: sebagian besar submit bersamaan
+        { duration: "1m", target: 0 }, // Turun kembali setelah ujian selesai
+      ],
+      gracefulRampDown: "20s",
     },
   },
   thresholds: {
-    http_req_failed: ["rate<0.01"], // Toleransi kegagalan API harus di bawah 1% (no error 500/504 dkk)
-    http_req_duration: ["p(95)<2000"], // 95% dari request kirim harus selesai di bawah 2 detik
+    http_req_failed: ["rate<0.01"], // Error rate <1%
+    http_req_duration: ["p(95)<2000"], // 95% request selesai <2 detik
   },
 };
 

@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ExamsSkeleton() {
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 bg-background animate-pulse">
+    <div className="container mx-auto max-w-5xl   bg-background animate-pulse">
       {/* Header Skeleton Section */}
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="space-y-2">
