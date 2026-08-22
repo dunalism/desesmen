@@ -26,7 +26,7 @@ model User {
 model Assessment {
   id            String         @id @default(uuid())
   userId        String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_assessments_user")
   
   title         String?        @db.VarChar(255) // Nama/Judul paket soal kustom
   
@@ -72,7 +72,7 @@ enum Difficulty {
 model Question {
   id             String          @id @default(uuid())
   assessmentId   String
-  assessment     Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessment     Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade, map: "fk_questions_assessment")
   
   questionText   String          @db.Text
   type           QuestionType
@@ -102,7 +102,7 @@ enum QuestionType {
 model Option {
   id         String   @id @default(uuid())
   questionId String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade, map: "fk_options_question")
   
   optionText String   @db.Text
   isCorrect  Boolean  @default(false)
@@ -114,7 +114,7 @@ model Option {
 model Exam {
   id              String        @id @default(uuid())
   assessmentId    String
-  assessment      Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessment      Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade, map: "fk_exams_assessment")
 
   title           String        @db.VarChar(255) // Nama/Judul sesi ujian (misal: "Ujian Harian Matematika")
   token           String        @unique @db.VarChar(50) // Kode ujian unik untuk diakses siswa
@@ -137,7 +137,7 @@ model Exam {
 model ExamAttempt {
   id          String          @id @default(uuid())
   examId      String
-  exam        Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exam        Exam            @relation(fields: [examId], references: [id], onDelete: Cascade, map: "fk_exam_attempts_exam")
 
   studentName String          @db.VarChar(255) // Nama lengkap siswa
   studentId   String?         @db.VarChar(100) // Nomor absen atau NISN siswa (opsional)
@@ -153,17 +153,17 @@ model ExamAttempt {
   answers     StudentAnswer[]
 
   @@map("exam_attempts")
-  @@unique([examId, studentId])
+  @@unique([examId, studentId, studentName])
 }
 
 // 7. Model Detail Jawaban Siswa (StudentAnswer) - Jawaban per Butir Soal
 model StudentAnswer {
   id             String      @id @default(uuid())
   attemptId      String
-  attempt        ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  attempt        ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade, map: "fk_student_answers_attempt")
 
   questionId     String
-  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade, map: "fk_student_answers_question")
 
   // Jawaban yang dipilih/ditulis siswa
   chosenOptionId String?     @db.VarChar(255) // Menyimpan ID Option yang dipilih siswa (untuk MULTIPLE_CHOICE)
