@@ -714,6 +714,18 @@ export default function CbtExamPage({
         console.warn("Failed to set status to COMPLETED:", fbErr);
       }
 
+      // Hapus akun anonymous Firebase Auth agar tidak menumpuk di Firebase Console
+      try {
+        const { deleteUser } = await import("firebase/auth");
+        const { auth } = await import("@/lib/firebase");
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
+          await deleteUser(auth.currentUser);
+          console.log("CBT Anonymous Auth user successfully deleted.");
+        }
+      } catch (authDelErr) {
+        console.warn("Failed to delete anonymous user:", authDelErr);
+      }
+
       exitFullscreen();
       localStorage.clear();
       sessionStorage.clear();
@@ -752,6 +764,21 @@ export default function CbtExamPage({
           );
         } catch (fbErr) {
           console.warn("Failed to set status to COMPLETED on conflict:", fbErr);
+        }
+
+        // Hapus akun anonymous Firebase Auth agar tidak menumpuk di Firebase Console
+        try {
+          const { deleteUser } = await import("firebase/auth");
+          const { auth } = await import("@/lib/firebase");
+          if (auth.currentUser && auth.currentUser.isAnonymous) {
+            await deleteUser(auth.currentUser);
+            console.log("CBT Anonymous Auth user deleted on conflict 409.");
+          }
+        } catch (authDelErr) {
+          console.warn(
+            "Failed to delete anonymous user on conflict:",
+            authDelErr,
+          );
         }
 
         exitFullscreen();

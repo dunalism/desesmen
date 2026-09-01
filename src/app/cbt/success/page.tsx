@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -13,6 +14,30 @@ import {
 
 export default function CbtSuccessPage() {
   const router = useRouter();
+
+  // Bersihkan sisa akun anonymous (jika ada) saat mendarat di halaman sukses
+  useEffect(() => {
+    const cleanupAnonymousUser = async () => {
+      try {
+        const { auth } = await import("@/lib/firebase");
+        const { deleteUser } = await import("firebase/auth");
+
+        // Tunggu sebentar agar penulisan status Firestore terakhir selesai sepenuhnya
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
+          await deleteUser(auth.currentUser);
+          console.log("CBT Anonymous Auth user cleaned up on success page.");
+        }
+      } catch (err) {
+        console.warn(
+          "Silent ignore: Failed to delete anonymous user on success page:",
+          err,
+        );
+      }
+    };
+    cleanupAnonymousUser();
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 px-4 py-12 dark:bg-background">

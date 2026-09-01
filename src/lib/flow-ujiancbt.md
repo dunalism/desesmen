@@ -153,13 +153,28 @@ Setelah pengiriman sukses (atau jika terdeteksi konflik 409 karena lembar jawaba
 
 - **Fakta Teknis:** Jika pengiriman gagal (misal koneksi mati total saat submit), status di Firestore diubah menjadi `SUBMIT_FAILED` beserta pesan kesalahannya. Jawaban tetap disimpan aman di browser siswa, menampilkan pesan error, dan menyediakan tombol **"Kirim Ulang"** manual setelah koneksi pulih.
 
-#### D. Pembersihan Penyimpanan Lokal (Data Cleansing)
+#### D. Pembersihan Penyimpanan Lokal & Akun Anonim (Data Cleansing & Cleanup)
 
-Setelah dipastikan sukses (atau ditangani sebagai sukses pada konflik 409), seluruh memori penyimpanan di browser siswa dihapus total demi keamanan.
+Setelah dipastikan sukses (atau ditangani sebagai sukses pada konflik 409), seluruh data lokal dan akun otentikasi dibersihkan secara total demi keamanan dan kerapian sistem.
 
-- **Baris Kode:**
-  ```typescript
-  localStorage.clear();
-  sessionStorage.clear();
-  ```
-- Browser kemudian mengarahkan siswa ke halaman `/cbt/success` yang menyatakan ujian telah berhasil diselesaikan.
+1. **Penghapusan Akun Anonim Firebase Auth**:
+   Untuk mencegah penumpukan akun sampah anonim di Firebase Console, browser melakukan pemanggilan perintah hapus akun secara real-time tepat setelah status Firestore diperbarui:
+
+   ```typescript
+   const { deleteUser } = await import("firebase/auth");
+   if (auth.currentUser && auth.currentUser.isAnonymous) {
+     await deleteUser(auth.currentUser);
+   }
+   ```
+
+   _Fakta Teknis:_ Tindakan ini **TIDAK** menghapus data/pulse pengerjaan terakhir yang sudah tersimpan di Firestore. Guru tetap bisa melihat riwayat status `"COMPLETED"` di Live Monitor.
+
+2. **Pembersihan Cache Browser**:
+
+   ```typescript
+   localStorage.clear();
+   sessionStorage.clear();
+   ```
+
+3. **Pengalihan Sesi**:
+   Browser kemudian mengarahkan siswa ke halaman `/cbt/success`. Sebagai pertahanan berlapis, halaman sukses juga melakukan pembersihan cadangan jika masih terdeteksi adanya sisa akun anonim yang aktif.
