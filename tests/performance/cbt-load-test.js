@@ -131,6 +131,11 @@ function sendFirestorePulse(params) {
   const patchUrl = `${url}&${updateMaskQuery}`;
   const res = http.request("PATCH", patchUrl, payload, { headers });
 
+  if (res.status !== 200) {
+    console.log(`[DEBUG] Pulse Status: ${res.status}`);
+    console.log(`[DEBUG] Pulse Error: ${res.body}`);
+  }
+
   return check(res, {
     "Pulse monitoring berhasil dikirim (200)": (r) => r.status === 200,
   });
@@ -140,6 +145,9 @@ function sendFirestorePulse(params) {
 // 3. MAIN SCENARIO (Alur Skenario Pengerjaan Siswa)
 // =============================================================================
 export default function () {
+  let idToken = null;
+
+  try {
   // --- TAHAP 1: SISWA MENGAKSES GERBANG CBT ---
   const homeRes = http.get(`${BASE_URL}/cbt`);
   check(homeRes, {
@@ -154,23 +162,26 @@ export default function () {
   const authHeaders = { "Content-Type": "application/json" };
 
   const authRes = http.post(authUrl, authPayload, { headers: authHeaders });
+  
+  console.log(`[DEBUG] Auth Status: ${authRes.status}`);
+  console.log(`[DEBUG] Auth Response: ${authRes.body}`);
+
   const isAuthSuccess = check(authRes, {
     "Firebase Anonymous Auth berhasil (200)": (r) => r.status === 200,
   });
 
-  let idToken = null;
-  if (isAuthSuccess) {
-    try {
-      const authData = JSON.parse(authRes.body);
-      idToken = authData.idToken;
-    } catch (e) {
-      console.error("Gagal melakukan parsing token Firebase Auth");
+    if (isAuthSuccess) {
+      try {
+        const authData = JSON.parse(authRes.body);
+        idToken = authData.idToken;
+      } catch (e) {
+        console.error("Gagal melakukan parsing token Firebase Auth");
+      }
+    } else {
+      console.warn(
+        `Firebase Auth Gagal. Status: ${authRes.status}. Body: ${authRes.body}`,
+      );
     }
-  } else {
-    console.warn(
-      `Firebase Auth Gagal. Status: ${authRes.status}. Body: ${authRes.body}`,
-    );
-  }
 
   // --- TAHAP 2: MULAI UJIAN SEKARANG (DOWNLOAD SOAL) ---
   const questionsUrl = `${BASE_URL}/api/exams/${EXAM_TOKEN}/questions`;
@@ -314,6 +325,10 @@ export default function () {
   const submitUrl = `${BASE_URL}/api/exams/submit`;
   const submitRes = http.post(submitUrl, payload, { headers });
 
+  console.log(`[DEBUG] Submit URL: ${submitUrl}`);
+  console.log(`[DEBUG] Submit Status: ${submitRes.status}`);
+  console.log(`[DEBUG] Submit Response: ${submitRes.body}`);
+
   const isSubmitSuccess = check(submitRes, {
     "Lembar jawaban berhasil disubmit (200)": (r) => r.status === 200,
     "Deteksi anti-double submit atau sukses": (r) =>
@@ -345,19 +360,25 @@ export default function () {
     });
   }
 
-  // --- TAHAP 4.6: HAPUS AKUN ANONIM FIREBASE AUTH ---
-  // Untuk menyamakan behavior client-side yang baru, kita hapus akun anonim k6 di akhir test
-  if (idToken) {
-    const deleteUserUrl = `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`;
-    const deletePayload = JSON.stringify({ idToken: idToken });
-    const deleteHeaders = { "Content-Type": "application/json" };
+    // --- TAHAP 5: HALAMAN BERHASIL ---
+    sleep(1); // Jeda pemindahan halaman ke sukses
+  } finally {
+    // --- TAHAP 4.6: HAPUS AKUN ANONIM FIREBASE AUTH ---
+    // Untuk menyamakan behavior client-side yang baru, kita hapus akun anonim k6 di akhir test (SELALU DIJALANKAN!)
+    if (idToken) {
+      const deleteUserUrl = `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`;
+      const deletePayload = JSON.stringify({ idToken: idToken });
+      const deleteHeaders = { "Content-Type": "application/json" };
 
-    const deleteRes = http.post(deleteUserUrl, deletePayload, { headers: deleteHeaders });
-    check(deleteRes, {
-      "Pembersihan akun anonymous Firebase berhasil (200)": (r) => r.status === 200,
-    });
+      const deleteRes = http.post(deleteUserUrl, deletePayload, {
+        headers: deleteHeaders,
+      });
+      console.log(`[DEBUG] Delete Status: ${deleteRes.status}`);
+      console.log(`[DEBUG] Delete Response: ${deleteRes.body}`);
+      check(deleteRes, {
+        "Pembersihan akun anonymous Firebase berhasil (200)": (r) =>
+          r.status === 200,
+      });
+    }
   }
-
-  // --- TAHAP 5: HALAMAN BERHASIL ---
-  sleep(1); // Jeda pemindahan halaman ke sukses
 }
