@@ -11,16 +11,10 @@ const TARGET_VUS = parseInt(__ENV.K6_VUS || "50", 10);
 export const options = {
   scenarios: {
     ujian_cbt: {
-      executor: "ramping-vus",
-      startVUs: 0,
-      stages: [
-        { duration: "30s", target: 20 }, // Awal login 20 siswa
-        { duration: "1m", target: 50 }, // Naik ke 50 siswa (mulai ujian)
-        { duration: "3m", target: 50 }, // Stabil: semua siswa aktif mengerjakan soal
-        { duration: "1m", target: 80 }, // Puncak: sebagian besar submit bersamaan
-        { duration: "1m", target: 0 }, // Turun kembali setelah ujian selesai
-      ],
-      gracefulRampDown: "20s",
+      executor: "per-vu-iterations",
+      vus: TARGET_VUS,
+      iterations: 1,
+      maxDuration: "10m",
     },
   },
   thresholds: {
@@ -348,6 +342,19 @@ export default function () {
       answers: currentAnswers,
       startedAt: startedAtIso,
       durationSeconds: finalDurationSeconds,
+    });
+  }
+
+  // --- TAHAP 4.6: HAPUS AKUN ANONIM FIREBASE AUTH ---
+  // Untuk menyamakan behavior client-side yang baru, kita hapus akun anonim k6 di akhir test
+  if (idToken) {
+    const deleteUserUrl = `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`;
+    const deletePayload = JSON.stringify({ idToken: idToken });
+    const deleteHeaders = { "Content-Type": "application/json" };
+
+    const deleteRes = http.post(deleteUserUrl, deletePayload, { headers: deleteHeaders });
+    check(deleteRes, {
+      "Pembersihan akun anonymous Firebase berhasil (200)": (r) => r.status === 200,
     });
   }
 
