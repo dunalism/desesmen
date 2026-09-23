@@ -8,7 +8,6 @@ export async function GET() {
   try {
     const exams = await prisma.exam.findMany({
       where: {
-        isActive: false,
         showLeaderboard: true,
       },
       select: {

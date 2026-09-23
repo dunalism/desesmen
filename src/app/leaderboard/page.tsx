@@ -161,7 +161,7 @@ export default function LeaderboardListPage() {
             <p className="text-muted-foreground text-sm max-w-sm mt-1">
               {search
                 ? "Tidak ada hasil yang cocok dengan kata kunci pencarian Anda."
-                : "Saat ini belum ada sesi ujian yang ditutup atau diizinkan memiliki papan peringkat."}
+                : "Saat ini belum ada sesi ujian yang diizinkan memiliki papan peringkat publik."}
             </p>
           </Card>
         ) : (
