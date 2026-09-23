@@ -14,6 +14,7 @@ import {
   Shuffle,
   Eye,
   Activity,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ interface ExamCardProps {
   exam: ExamItem;
   assessment: Assessment[];
   onToggleActive: (id: string, currentStatus: boolean) => void;
+  onToggleLeaderboard: (id: string, currentStatus: boolean) => void;
   onDelete: (id: string, title: string) => void;
 }
 
@@ -37,6 +39,7 @@ export function ExamCard({
   exam,
   assessment,
   onToggleActive,
+  onToggleLeaderboard,
   onDelete,
 }: ExamCardProps) {
   const router = useRouter();
@@ -120,6 +123,17 @@ export function ExamCard({
                 </Button>
               )
             )}
+
+            {/* Toggle Leaderboard Button */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onToggleLeaderboard(exam.id, exam.showLeaderboard)}
+              title={exam.showLeaderboard ? "Matikan Leaderboard Publik" : "Aktifkan Leaderboard Publik"}
+              className={exam.showLeaderboard ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10" : "text-muted-foreground"}
+            >
+              <Trophy className={`h-4 w-4 ${exam.showLeaderboard ? "fill-amber-500/20" : ""}`} />
+            </Button>
 
             {/* Hapus Button */}
             <Button

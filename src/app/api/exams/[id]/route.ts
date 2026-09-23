@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// PATCH - Mengupdate status aktif/nonaktif sesi ujian (Tutup Ujian)
+// PATCH - Mengupdate status aktif/nonaktif sesi ujian (Tutup Ujian) atau status leaderboard
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -13,21 +13,29 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { isActive } = body;
+    const { isActive, showLeaderboard } = body;
 
-    if (isActive === undefined) {
+    if (isActive === undefined && showLeaderboard === undefined) {
       return NextResponse.json(
-        { error: "Parameter 'isActive' wajib disertakan." },
+        { error: "Parameter 'isActive' atau 'showLeaderboard' wajib disertakan." },
         { status: 400 },
       );
     }
 
+    const updateData: any = {};
+    if (isActive !== undefined) {
+      updateData.isActive = !!isActive;
+    }
+    if (showLeaderboard !== undefined) {
+      updateData.showLeaderboard = !!showLeaderboard;
+    }
+
     const exam = await prisma.exam.update({
       where: { id },
-      data: { isActive: !!isActive },
+      data: updateData,
     });
 
-    // Revalidasi cache statis pertanyaan agar perubahan status aktif/nonaktif langsung ter-apply
+    // Revalidasi cache statis pertanyaan agar perubahan status langsung ter-apply
     try {
       revalidatePath(`/api/exams/${exam.token}/questions`);
     } catch (cacheError) {
@@ -36,7 +44,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: `Status ujian berhasil diperbarui menjadi ${isActive ? "Aktif" : "Nonaktif/Ditutup"}.`,
+      message: "Sesi ujian berhasil diperbarui.",
       data: exam,
     });
   } catch (error) {

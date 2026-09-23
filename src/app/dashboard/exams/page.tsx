@@ -145,6 +145,38 @@ export default function ExamsDashboardPage() {
     );
   };
 
+  // Handler mengaktifkan/nonaktifkan leaderboard publik
+  const handleToggleLeaderboard = async (id: string, currentStatus: boolean) => {
+    const actionText = currentStatus ? "menonaktifkan" : "mengaktifkan";
+    showConfirm(
+      "Ubah Status Papan Peringkat",
+      `Apakah Anda yakin ingin ${actionText} papan peringkat publik untuk ujian ini?`,
+      async () => {
+        try {
+          const response = await fetch(`/api/exams/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ showLeaderboard: !currentStatus }),
+          });
+
+          if (response.ok) {
+            showAlert(
+              "Sukses",
+              `Papan peringkat berhasil ${currentStatus ? "dinonaktifkan" : "diaktifkan"}!`,
+            );
+            mutateExams();
+          } else {
+            const result = await response.json();
+            showAlert("Gagal", result.error || "Gagal mengubah status papan peringkat.");
+          }
+        } catch (error) {
+          console.error("Leaderboard toggle error:", error);
+          showAlert("Error", "Terjadi kesalahan jaringan.");
+        }
+      },
+    );
+  };
+
   const handleDeleteExam = async (id: string, title: string) => {
     showConfirm(
       "Hapus Sesi Ujian",
@@ -233,6 +265,7 @@ export default function ExamsDashboardPage() {
               key={exam.id}
               exam={exam}
               onToggleActive={handleToggleActive}
+              onToggleLeaderboard={handleToggleLeaderboard}
               onDelete={handleDeleteExam}
             />
           ))}
